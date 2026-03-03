@@ -1,18 +1,27 @@
 """
 Soundside MCP Client — Python Example
 
-Demonstrates connecting to Soundside's MCP endpoint and generating media.
-Requires: pip install httpx
+Demonstrates connecting to Soundside's MCP endpoint, listing tools,
+generating an image, and checking the result.
+
+Requirements:
+    pip install httpx
+
+Usage:
+    python soundside_client.py <API_KEY>
+    # or
+    SOUNDSIDE_API_KEY=mcp_... python soundside_client.py
 """
 
 import httpx
 import json
+import os
 import sys
 import time
 
 
 class SoundsideClient:
-    """Simple MCP client for Soundside."""
+    """Simple synchronous MCP client for Soundside."""
 
     def __init__(self, api_key: str, endpoint: str = "https://mcp.soundside.ai/mcp"):
         self.api_key = api_key
@@ -38,9 +47,19 @@ class SoundsideClient:
         """Parse SSE response and return the JSON-RPC result."""
         for line in text.splitlines():
             if line.startswith("data:"):
-                return json.loads(line[5:])
-        # Fallback: try parsing as plain JSON
+                return json.loads(line[5:].strip())
         return json.loads(text)
+
+    def _extract_tool_result(self, rpc_result: dict) -> dict:
+        """Extract the tool result from an MCP JSON-RPC response."""
+        content = rpc_result.get("result", {}).get("content", [])
+        for c in content:
+            if c.get("type") == "text":
+                try:
+                    return json.loads(c["text"])
+                except json.JSONDecodeError:
+                    return {"text": c["text"]}
+        return rpc_result
 
     def connect(self) -> dict:
         """Initialize MCP session."""
@@ -54,7 +73,7 @@ class SoundsideClient:
                     "params": {
                         "protocolVersion": "2024-11-05",
                         "capabilities": {},
-                        "clientInfo": {"name": "soundside-python", "version": "1.0"},
+                        "clientInfo": {"name": "soundside-python-example", "version": "1.0"},
                     },
                 },
                 headers=self._headers(),
@@ -63,7 +82,7 @@ class SoundsideClient:
             return self._parse_sse(r.text)
 
     def list_tools(self) -> list:
-        """Get available tools."""
+        """Get available tools and their schemas."""
         with httpx.Client(timeout=30) as client:
             r = client.post(
                 self.endpoint,
@@ -74,7 +93,7 @@ class SoundsideClient:
             return result.get("result", {}).get("tools", [])
 
     def call_tool(self, name: str, arguments: dict, timeout: int = 120) -> dict:
-        """Call an MCP tool."""
+        """Call an MCP tool and return the parsed result."""
         with httpx.Client(timeout=timeout) as client:
             r = client.post(
                 self.endpoint,
@@ -86,35 +105,37 @@ class SoundsideClient:
                 },
                 headers=self._headers(),
             )
-            result = self._parse_sse(r.text)
-            # Extract tool result text
-            content = result.get("result", {}).get("content", [])
-            for c in content:
-                if c.get("type") == "text":
-                    try:
-                        return json.loads(c["text"])
-                    except json.JSONDecodeError:
-                        return {"text": c["text"]}
-            return result
+            rpc = self._parse_sse(r.text)
+            if "error" in rpc:
+                return {"error": rpc["error"]}
+            return self._extract_tool_result(rpc)
 
 
 def main():
-    api_key = sys.argv[1] if len(sys.argv) > 1 else input("API Key: ")
+    api_key = (
+        sys.argv[1] if len(sys.argv) > 1
+        else os.environ.get("SOUNDSIDE_API_KEY")
+    )
+    if not api_key:
+        print("Usage: python soundside_client.py <API_KEY>")
+        print("   or: SOUNDSIDE_API_KEY=mcp_... python soundside_client.py")
+        sys.exit(1)
+
     client = SoundsideClient(api_key)
 
-    # Connect
+    # 1. Connect
     print("Connecting to Soundside MCP...")
     client.connect()
     print(f"✅ Connected (session: {client.session_id[:16]}...)")
 
-    # List tools
+    # 2. List tools
     tools = client.list_tools()
     print(f"\n📋 Available tools ({len(tools)}):")
     for t in tools:
-        print(f"  • {t['name']}")
+        print(f"  • {t['name']}: {t.get('description', '')[:60]}")
 
-    # Generate an image
-    print("\n🎨 Generating image...")
+    # 3. Generate an image
+    print("\n🎨 Generating image (vertex)...")
     t0 = time.time()
     result = client.call_tool("create_image", {
         "prompt": "A vibrant sunset over a calm ocean, photorealistic",
@@ -123,26 +144,28 @@ def main():
     elapsed = time.time() - t0
     print(f"  Resource ID: {result.get('resource_id', 'N/A')}")
     print(f"  Time: {elapsed:.1f}s")
+    if result.get("storage_url"):
+        print(f"  URL: {result['storage_url'][:80]}...")
 
-    # Check the resource
+    # 4. Analyze it
     if result.get("resource_id"):
-        print("\n📦 Checking resource...")
-        info = client.call_tool("lib_list", {
-            "entity_type": "resources",
+        print("\n🔍 Analyzing image...")
+        analysis = client.call_tool("analyze_media", {
             "resource_id": result["resource_id"],
         })
-        print(f"  State: {info.get('state', 'N/A')}")
-        url = info.get("storage_url", "")
-        if url:
-            print(f"  URL: {url[:80]}...")
+        meta = analysis.get("metadata", analysis)
+        print(f"  Type: {meta.get('mime_type', 'N/A')}")
+        if "image" in meta:
+            img = meta["image"]
+            print(f"  Dimensions: {img.get('width')}×{img.get('height')}")
 
-    # Generate text
-    print("\n📝 Generating text...")
+    # 5. Generate text
+    print("\n📝 Generating text (vertex)...")
     text_result = client.call_tool("create_text", {
         "prompt": "Write a haiku about AI agents creating art",
         "provider": "vertex",
     })
-    print(f"  {text_result.get('text', text_result)[:200]}")
+    print(f"  {text_result.get('text', str(text_result)[:200])}")
 
 
 if __name__ == "__main__":
