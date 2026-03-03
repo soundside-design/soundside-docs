@@ -6,10 +6,11 @@ Demonstrates the full creative pipeline:
   2. Generate video from that image (minimax I2V)
   3. Generate narration (minimax TTS)
   4. Generate background music (minimax)
-  5. Add text overlay to video
-  6. Extend video with Ken Burns to fit narration length
+  5. Add timed text overlay to video
+  6. Extend video with Ken Burns if narration is longer
   7. Mix narration into video
   8. Mix music into final
+  9. Run vision QA pass (analyze_media vision_qa + intent_checklist)
 
 This is a simplified version of the "Felix the Fox" demo film
 produced via Soundside's x402 payment path.
@@ -52,9 +53,20 @@ class SoundsideClient:
         return h
 
     def _parse(self, text: str) -> dict:
+        """Parse SSE response — server emits notification frames before the
+        actual JSON-RPC result. Find the frame with 'id' (the response)."""
+        last_data = None
         for line in text.splitlines():
             if line.startswith("data:"):
-                return json.loads(line[5:].strip())
+                try:
+                    obj = json.loads(line[5:].strip())
+                    if "id" in obj:
+                        return obj
+                    last_data = obj
+                except json.JSONDecodeError:
+                    pass
+        if last_data is not None:
+            return last_data
         return json.loads(text)
 
     def connect(self):
@@ -75,7 +87,14 @@ class SoundsideClient:
             rpc = self._parse(r.text)
             if "error" in rpc:
                 raise RuntimeError(f"MCP error: {rpc['error']}")
-            for content in rpc.get("result", {}).get("content", []):
+            result = rpc.get("result", {})
+            # Detect tool-level errors (isError=True in MCP result)
+            if result.get("isError"):
+                for ct in result.get("content", []):
+                    if ct.get("type") == "text":
+                        raise RuntimeError(f"Tool error ({tool}): {ct['text']}")
+                raise RuntimeError(f"Tool error ({tool}): unknown error")
+            for content in result.get("content", []):
                 if content.get("type") == "text":
                     try:
                         return json.loads(content["text"])
@@ -84,20 +103,26 @@ class SoundsideClient:
             return rpc
 
     def wait_for_resource(self, resource_id: str, timeout: int = 300) -> dict:
-        """Poll until an async resource completes."""
+        """Poll until an async resource completes and storage_url is available.
+        lib_list returns {items: [...]} so we read resource state from items[0].
+        """
         start = time.time()
         while time.time() - start < timeout:
             result = self.call("lib_list", {
                 "entity_type": "resources",
                 "resource_id": resource_id,
             })
-            state = result.get("state") or result.get("status", "")
-            if state == "completed":
-                return result
+            # lib_list wraps results: {success, status, items: [...]}
+            item = result.get("items", [{}])[0] if result.get("items") else result
+            state = item.get("state") or item.get("status", "")
             if state in ("failed", "error"):
-                raise RuntimeError(f"Resource {resource_id} failed: {result}")
+                raise RuntimeError(f"Resource {resource_id} failed: {item}")
+            # Wait for both completion AND storage_url to be populated
+            if state == "completed" and item.get("storage_url"):
+                return item
             time.sleep(5)
         raise TimeoutError(f"Resource {resource_id} did not complete in {timeout}s")
+
 
 
 def main():
@@ -131,7 +156,7 @@ def main():
     })
     video_id = vid["resource_id"]
     print(f"   Submitted: {video_id}")
-    client.wait_for_resource(video_id)
+    client.wait_for_resource(video_id, timeout=600)
     print(f"   Video ready ({time.time()-t0:.1f}s)")
 
     # --- Step 3: Generate narration ---
@@ -151,7 +176,7 @@ def main():
     t0 = time.time()
     music = client.call("create_music", {
         "provider": "minimax",
-        "lyrics": "",
+        "lyrics": "[Instrumental]",  # minimax music-2.0 requires non-empty lyrics
         "prompt": "Gentle folk acoustic, warm and uplifting, children's story soundtrack",
     })
     music_id = music["resource_id"]
@@ -159,8 +184,8 @@ def main():
     client.wait_for_resource(music_id)
     print(f"   Music ready ({time.time()-t0:.1f}s)")
 
-    # --- Step 5: Add text overlay ---
-    print("\n✏️ Step 5: Adding provider overlay...")
+    # --- Step 5: Add text overlay (timed: visible for first 4s only) ---
+    print("\n✏️ Step 5: Adding timed provider overlay...")
     overlay = client.call("edit_video", {
         "resource_id": video_id,
         "action": "add_text",
@@ -168,6 +193,8 @@ def main():
         "position": "bottom_left",
         "fontsize": 24,
         "fontcolor": "white",
+        "text_start_sec": 0.5,   # text appears after 0.5s
+        "text_end_sec": 4.0,     # text disappears at 4s (not pinned for the whole video)
         "advanced_options": {"bg_color": "rgba(0,0,0,0.5)"},
     })
     overlay_id = overlay["resource_id"]
@@ -235,6 +262,35 @@ def main():
     })
     final_id = final["resource_id"]
     print(f"   Final: {final_id}")
+
+    # --- Step 9: QA pass ---
+    print("\n🔍 Step 9: Running QA analysis on final film...")
+    qa = client.call("analyze_media", {
+        "resource_id": final_id,
+        "analysis_type": "vision_qa",
+        "reference_prompt": "A fox stretches and looks around a sunlit forest clearing",
+        "intent_checklist": {
+            "no_pillarboxing": True,
+            "no_audio_overlap": True,
+            # Verify the provider badge appears only in the first 4s
+            "text_overlays": [
+                {"text": "create_video • minimax • image_to_video", "start_sec": 0, "end_sec": 4},
+            ],
+        },
+    })
+    qa_meta = qa.get("metadata", qa)
+    score = qa_meta.get("score", "?")
+    passed = qa_meta.get("passed", "?")
+    audio_summary = qa_meta.get("audio_summary", "")
+    checklist = qa_meta.get("checklist_results", {})
+    print(f"   QA score: {score} | passed: {passed}")
+    if audio_summary:
+        print(f"   Audio: {audio_summary}")
+    if checklist:
+        for k, v in checklist.items():
+            print(f"   {k}: {v}")
+    if not passed:
+        print(f"   ⚠️  Issues: {qa_meta.get('issues', [])}")
 
     # --- Done ---
     print(f"\n✅ Film complete!")

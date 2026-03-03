@@ -44,10 +44,24 @@ class SoundsideClient:
         return h
 
     def _parse_sse(self, text: str) -> dict:
-        """Parse SSE response and return the JSON-RPC result."""
+        """Parse SSE response — server may emit multiple frames (notifications
+        then result). Find the frame that has an 'id' field (the JSON-RPC
+        response); skip notification frames that only have 'method'.
+        """
+        last_data = None
         for line in text.splitlines():
             if line.startswith("data:"):
-                return json.loads(line[5:].strip())
+                try:
+                    obj = json.loads(line[5:].strip())
+                    # JSON-RPC responses have 'id'; notifications do not
+                    if "id" in obj:
+                        return obj
+                    last_data = obj  # keep as fallback
+                except json.JSONDecodeError:
+                    pass
+        if last_data is not None:
+            return last_data
+        # Fall back: try parsing the whole text as JSON
         return json.loads(text)
 
     def _extract_tool_result(self, rpc_result: dict) -> dict:
@@ -159,13 +173,14 @@ def main():
             img = meta["image"]
             print(f"  Dimensions: {img.get('width')}×{img.get('height')}")
 
-    # 5. Generate text
-    print("\n📝 Generating text (vertex)...")
+    print(f"\n📝 Generating text (vertex)...")
     text_result = client.call_tool("create_text", {
         "prompt": "Write a haiku about AI agents creating art",
         "provider": "vertex",
     })
-    print(f"  {text_result.get('text', str(text_result)[:200])}")
+    # Server may return 'message' or 'text'; handle both
+    text_output = text_result.get("message") or text_result.get("text") or str(text_result)[:200]
+    print(f"  {text_output}")
 
 
 if __name__ == "__main__":

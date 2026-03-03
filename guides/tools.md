@@ -97,6 +97,8 @@ All providers are **async** — returns a `resource_id` immediately, completes i
 
 **Note:** `first_frame` and `character_reference` are mutually exclusive on some providers.
 
+**MiniMax resolution defaults:** For durations ≤ 6s, MiniMax Hailuo-2.3 defaults to 1080P output. For 10s clips, 768P is used (API cap). Override via `advanced_options: {"resolution": "768P"}`.
+
 ---
 
 ## create_audio
@@ -319,10 +321,10 @@ Edit media with 21 compositing, effects, and transformation actions. Works on vi
 | `trim` | Extract a time range | `resource_id`, `start_sec`, `duration_sec` |
 | `concat` | Join multiple clips | `resource_ids` (auto-normalizes resolution) |
 | `crossfade` | Transition between clips | `resource_ids`, `duration_sec` |
-| `add_text` | Text overlay | `resource_id`, `text`, `position`, `fontsize`, `fontcolor` |
+| `add_text` | Text overlay | `resource_id`, `text`, `position`, `fontsize`, `fontcolor`, `text_start_sec`, `text_end_sec` |
 | `adjust_speed` | Speed up/slow down | `resource_id`, `factor`, `smooth` (AI frame interp) |
 | `replace_audio` | Swap audio track | `resource_id`, `audio_source` |
-| `mix_audio` | Layer audio over video | `resource_id`, `audio_source`, `video_volume`, `overlay_volume`, `duration_mode` |
+| `mix_audio` | Layer audio over video | `resource_id`, `audio_source`, `video_volume`, `overlay_volume`, `duration_mode`, `audio_delay_sec` |
 | `color_grade` | Adjust brightness/contrast/saturation | `resource_id`, `brightness`, `contrast`, `saturation` |
 | `extract_frame` | Single frame as image | `resource_id`, `timestamp` |
 | `extract_frames` | Multiple frames | `resource_id`, `frame_interval_sec`, `start_sec`, `end_sec` |
@@ -403,10 +405,13 @@ Edit media with 21 compositing, effects, and transformation actions. Works on vi
 
 ### Tips
 
-- **Concat auto-normalizes** different resolutions to 1280×720 H.264. No manual normalization needed.
+- **Resolution:** `concat` normalizes to 1280×720 (720P) by default. For 1080P delivery, normalize first. See [Resolution Strategy](#resolution-strategy) below.
 - **mix_audio with `video_volume: 0.0`** effectively replaces the audio track.
+- **`audio_delay_sec`** offsets narration start time — use this when narrations for different clips are mixed sequentially into one composite video file.
 - **`duration_mode`** for mix_audio: `shortest` (default), `longest`, or `first` (video controls length).
+- **`text_start_sec` / `text_end_sec`** gate text overlays to a specific window — without them, text runs for the full video duration.
 - **Ken Burns** converts still images into video with smooth pan/zoom — great for extending scenes.
+- **CJK text** (Korean, Chinese, Japanese) is automatically rendered using the Noto Sans CJK font — no extra configuration needed.
 
 ---
 
@@ -417,7 +422,7 @@ Analyze media for technical properties, quality metrics, or AI-powered evaluatio
 **Analysis types:**
 - `technical` (default) — Duration, resolution, codecs, bitrate via ffprobe
 - `quality` — Quality metrics
-- `vision_qa` — AI evaluation using Gemini. Scores prompt adherence, style consistency, artifacts
+- `vision_qa` — AI evaluation using **Gemini 2.5 Pro** (for video) or Gemini 2.5 Flash (images). Scores prompt adherence, motion quality, temporal coherence, plus audio content analysis (narration overlap, audio artifacts, what's heard)
 
 | Parameter | Required | Type | Description |
 |-----------|----------|------|-------------|
@@ -425,6 +430,14 @@ Analyze media for technical properties, quality metrics, or AI-powered evaluatio
 | `analysis_type` | no | string | `technical`, `quality`, `vision_qa` (default: `technical`) |
 | `reference_prompt` | no | string | Original prompt for vision_qa scoring |
 | `criteria` | no | string[] | Evaluation criteria: `style_consistency`, `prompt_match`, `artifacts`, `audio_quality`, `composition` |
+| `intent_checklist` | no | object | Production spec checklist (vision_qa video only). See below. |
+
+**`intent_checklist` keys** (all optional):
+- `text_overlays` — `[{"text": "Seoul, 1987", "start_sec": 1, "end_sec": 6}]` — verify text appears only in its window
+- `no_pillarboxing` — `true` — flag any letterbox/pillarbox black bars
+- `no_audio_overlap` — `true` — flag if multiple narrations play simultaneously
+- `expected_resolution` — `"1280x720"` — verify resolution is met
+- `expected_language` — `"English"` — verify spoken/written language
 
 **Example — Technical:**
 ```json
@@ -438,7 +451,7 @@ Analyze media for technical properties, quality metrics, or AI-powered evaluatio
 
 Returns: duration, resolution, codecs, bitrate, frame rate, audio channels, etc.
 
-**Example — Vision QA:**
+**Example — Vision QA (generic):**
 ```json
 {
   "name": "analyze_media",
@@ -451,7 +464,78 @@ Returns: duration, resolution, codecs, bitrate, frame rate, audio channels, etc.
 }
 ```
 
-Returns: `score` (0-1), `passed` (bool), `issues` (array of strings), `suggestions` (array).
+**Example — Vision QA with intent checklist (film production QA):**
+```json
+{
+  "name": "analyze_media",
+  "arguments": {
+    "resource_id": "<final-film-id>",
+    "analysis_type": "vision_qa",
+    "intent_checklist": {
+      "text_overlays": [{"text": "Seoul, 1987", "start_sec": 1, "end_sec": 6}],
+      "no_pillarboxing": true,
+      "no_audio_overlap": true,
+      "expected_language": "Korean"
+    }
+  }
+}
+```
+
+**Returns (vision_qa):** `score` (0–1), `passed` (bool), `issues` (array), `suggestions` (array), `checklist_results` (object, if checklist provided), `audio_summary` (string).
+
+> **Pricing:** `technical`/`quality` = 1 credit. `vision_qa` = 3 credits (Gemini 2.5 Pro inference cost).
+
+**See also:** [vision\_qa\_example.py](../examples/python/vision_qa_example.py) — dedicated example covering generic QA, spec-driven checklists, and reading audio summaries.
+
+---
+
+## Resolution Strategy
+
+**TL;DR:** Don't assume a specific output resolution, be explicit about your target.
+
+### Why This Matters
+
+Different AI video providers output different native resolutions. The `concat` action normalizes all clips to **1280×720** (720P) by default — a safe cross-provider baseline. But this may not be what you want, especially now that MiniMax defaults to 1080P.
+
+| Provider | Native Output | At 720P concat | At 1080P concat |
+|----------|--------------|----------------|-----------------|
+| Vertex, Luma, Runway | 1280×720 | no change ✓ | slight upscale |
+| MiniMax (≤6s default) | 1920×1080 | **downscaled ⬇️** | no change ✓ |
+| MiniMax (10s) | 1366×768 | downscaled | slight upscale |
+| Grok | 848×480 | upscaled | larger upscale |
+
+### Choosing a Target
+
+**Use 720P (1280×720) when:**
+- Your workflow mixes multiple providers (especially Vertex/Luma/Runway which output 720P natively)
+- You're building for social media, fast iteration, or internal review
+- File size and processing speed matter
+- Grok is in the mix (upscaling 480P further to 1080P loses quality)
+
+**Use 1080P (1920×1080) when:**
+- You're producing a final film deliverable for broadcast, streaming (YouTube, Vimeo), or archival
+- Your clip mix is primarily or entirely MiniMax (which already generates at 1080P)
+- Quality is the priority over processing speed or file size
+
+### How to Normalize to Your Target
+
+**720P (auto, concat default) — no action needed:**
+```json
+{"name": "edit_video", "arguments": {"action": "concat", "resource_ids": ["<id1>", "<id2>"]}}
+```
+
+**1080P — normalize each clip first, then concat:**
+```json
+{"name": "edit_video", "arguments": {
+  "resource_id": "<clip-id>",
+  "action": "custom_ffmpeg",
+  "ffmpeg_args": "-vf \"scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2\" -c:v libx264 -crf 18 -pix_fmt yuv420p -r 24 -an"
+}}
+```
+
+Then concat the normalized 1080P clips.
+
+> **If you don't specify a target, you get 720P.** This is intentional — it's the safe cross-provider baseline. For any delivery context that specifies a resolution (broadcast, streaming platforms, client deliverables), always normalize explicitly to your target before concat.
 
 ---
 
