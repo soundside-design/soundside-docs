@@ -30,7 +30,7 @@ except ImportError as e:
     print('Install with: pip install "x402[evm]" mcp')
     sys.exit(1)
 
-ENDPOINT = "https://mcp.soundside.ai/mcp-x402"
+ENDPOINT = "https://mcp.soundside.ai/mcp"
 NETWORK  = "eip155:8453"  # Base mainnet
 
 

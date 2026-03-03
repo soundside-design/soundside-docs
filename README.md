@@ -88,6 +88,5 @@ See [x402 Guide](./guides/x402.md) for full setup.
 
 - **Website**: [soundside.ai](https://soundside.ai)
 - **MCP Endpoint**: `https://mcp.soundside.ai/mcp`
-- **x402 Endpoint**: `https://mcp.soundside.ai/mcp-x402`
 - **Live Pricing**: `https://mcp.soundside.ai/api/x402/status`
 - **GitHub**: [github.com/soundside-design/soundside-docs](https://github.com/soundside-design/soundside-docs)
