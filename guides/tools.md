@@ -64,7 +64,7 @@ All providers are **async** — returns a `resource_id` immediately, completes i
 | `resource_id` | no | string | Alias for `first_frame` |
 | `character_reference` | no | string | Reference image for consistent characters (luma, minimax, grok, vertex) |
 | `last_frame` | no | string | Resource ID or URL for last frame guidance |
-| `extend_video` | no | string | Resource ID of video to extend (vertex) |
+| `extend_video` | no | string | Resource ID or URL of video to extend/continue. Supported by: `vertex` (Veo), `grok` (6-10s), `luma` (Ray-2, ~5s). Mutually exclusive with `first_frame` and `input_video`. |
 | `input_video` | no | string | Resource ID for video-to-video or Act-Two |
 | `input_audio` | no | string | Resource ID for Act-Two audio input |
 | `advanced_options` | no | object | Provider-specific settings |
@@ -95,7 +95,19 @@ All providers are **async** — returns a `resource_id` immediately, completes i
 }
 ```
 
-**Note:** `first_frame` and `character_reference` are mutually exclusive on some providers.
+**Example — extend/continue an existing video (Grok or Luma):**
+```json
+{
+  "name": "create_video",
+  "arguments": {
+    "prompt": "The fox continues walking deeper into the forest as dusk falls",
+    "provider": "grok",
+    "extend_video": "<resource-id-of-previous-clip>"
+  }
+}
+```
+
+**Note:** `extend_video`, `first_frame`, and `input_video` are mutually exclusive on Grok. For Luma, `extend_video` takes precedence over `first_frame`. `character_reference` is mutually exclusive with `first_frame` on some providers.
 
 **MiniMax resolution defaults:** For durations ≤ 6s, MiniMax Hailuo-2.3 defaults to 1080P output. For 10s clips, 768P is used (API cap). Override via `advanced_options: {"resolution": "768P"}`.
 
@@ -329,7 +341,7 @@ Edit media with 21 compositing, effects, and transformation actions. Works on vi
 | `extract_frame` | Single frame as image | `resource_id`, `timestamp` |
 | `extract_frames` | Multiple frames | `resource_id`, `frame_interval_sec`, `start_sec`, `end_sec` |
 | `extract_audio` | Audio track as file | `resource_id` |
-| `ken_burns` | Pan/zoom on still image | `resource_id`, `zoom_start`, `zoom_end`, `pan_direction`, `easing` |
+| `ken_burns` | Pan/zoom on still image | `resource_id`, `zoom_start`, `zoom_end`, `pan_direction` (`center`, `left_to_right`, `right_to_left`, `top_to_bottom`, `bottom_to_top`, `documentary`, `dramatic`, `reveal`, **`none`/`static`** for pure zoom), `easing` |
 | `speed_ramp` | Gradual speed change | `resource_id`, `speed_start`, `speed_end`, `easing` |
 | `film_grain` | Add film grain texture | `resource_id`, `grain_intensity` (1-100) |
 | `vignette` | Dark edge vignette | `resource_id`, `vignette_angle` |
@@ -410,7 +422,7 @@ Edit media with 21 compositing, effects, and transformation actions. Works on vi
 - **`audio_delay_sec`** offsets narration start time — use this when narrations for different clips are mixed sequentially into one composite video file.
 - **`duration_mode`** for mix_audio: `shortest` (default), `longest`, or `first` (video controls length).
 - **`text_start_sec` / `text_end_sec`** gate text overlays to a specific window — without them, text runs for the full video duration.
-- **Ken Burns** converts still images into video with smooth pan/zoom — great for extending scenes.
+- **Ken Burns** converts still images into video with smooth pan/zoom — great for extending scenes. Use `pan_direction: "none"` or `"static"` for a pure zoom-only effect with no lateral movement.
 - **CJK text** (Korean, Chinese, Japanese) is automatically rendered using the Noto Sans CJK font — no extra configuration needed.
 
 ---
@@ -600,10 +612,10 @@ CRUD operations for library entities.
 
 ## lib_share
 
-Share projects with other users.
+Share projects with other users. **Manages access permissions only — does not generate download URLs.** To retrieve a download URL for a resource, use `lib_list` with `entity_type: "resources"` and the resource UUID.
 
 | Parameter | Required | Type | Description |
-|-----------|----------|------|-------------|
+|-----------|----------|------|--------------|
 | `operation` | yes | string | `share`, `list`, `revoke` |
 | `project_id` | yes | string | Project UUID |
 | `user_email` | no | string | Email to share with (for `share`) |

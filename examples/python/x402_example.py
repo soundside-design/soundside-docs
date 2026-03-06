@@ -203,6 +203,8 @@ async def main():
         print(f"  📥 URL: {img_result['storage_url'][:80]}...")
     if img_result.get("wallet_link"):
         print(f"  🔗 Browser access: {img_result['wallet_link'][:60]}...")
+    if img_result.get("x402_session_token"):
+        print("  🔐 x402_session_token returned for /api/x402/resource polling")
     print(f"  ⏱ {time.time()-t0:.1f}s\n")
 
     print("💰 Done! USDC payments settled on Base via Coinbase facilitator.")
