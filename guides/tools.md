@@ -322,7 +322,7 @@ Generate multiple related artifacts from a single brief.
 
 ## edit_video
 
-Edit media with 21 compositing, effects, and transformation actions. Works on video, audio, and images.
+Edit media with 22 compositing, effects, and transformation actions. Works on video, audio, and images.
 
 **Provider:** `soundside.ai` (platform editing engine, FFmpeg-based)
 
@@ -351,12 +351,13 @@ Edit media with 21 compositing, effects, and transformation actions. Works on vi
 | `pad_audio` | Pad audio to target duration | `resource_id`, `target_duration`, `audio_position` |
 | `loop` | Loop media | `resource_id` |
 | `custom_ffmpeg` | Raw FFmpeg args | `resource_id`, `ffmpeg_args` |
+| `custom` | Custom editing pipeline | `resource_id`, action-specific params |
 
 ### Common Parameters
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `action` | string (required) | One of the 21 actions above |
+| `action` | string (required) | One of the 22 actions above |
 | `resource_id` | string | Source resource for single-input actions |
 | `resource_ids` | string[] | Source resources for multi-input actions (concat, crossfade, split_screen) |
 | `advanced_options` | object | Extra settings (e.g., `{"bg_color": "rgba(0,0,0,0.5)"}` for text background, `{"duration": 5}` for ken_burns) |

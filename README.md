@@ -37,7 +37,7 @@ POST https://mcp.soundside.ai/mcp
 
 | Tool | What It Does |
 |------|-------------|
-| `edit_video` | 21 actions: trim, concat, crossfade, Ken Burns, mix/replace audio, text overlays, color grading, film grain, speed ramp, split screen, and more |
+| `edit_video` | 22 actions: trim, concat, crossfade, Ken Burns, mix/replace audio, text overlays, color grading, film grain, speed ramp, split screen, and more |
 | `analyze_media` | Technical analysis (ffprobe), AI vision QA (Gemini), quality scoring |
 
 ### Library Management

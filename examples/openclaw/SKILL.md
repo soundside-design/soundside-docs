@@ -45,7 +45,7 @@ Once connected, your agent has access to:
 - `create_artifact` — Charts, presentations, documents, diagrams
 
 ### Editing & Analysis (2 tools)
-- `edit_video` — 21 editing actions: trim, concat, Ken Burns, mix audio, text overlays, color grading, film grain, split screen, and more
+- `edit_video` — 22 editing actions: trim, concat, Ken Burns, mix audio, text overlays, color grading, film grain, split screen, custom, and more
 - `analyze_media` — Technical analysis + AI vision QA scoring
 
 ### Library (3 tools)
