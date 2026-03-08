@@ -73,7 +73,7 @@ class SoundsideClient:
         with httpx.Client(timeout=30) as c:
             r = c.post(self.endpoint, json={
                 "jsonrpc": "2.0", "id": self._next_id(), "method": "initialize",
-                "params": {"protocolVersion": "2024-11-05", "capabilities": {},
+                "params": {"protocolVersion": "2025-11-25", "capabilities": {},
                            "clientInfo": {"name": "film-pipeline", "version": "1.0"}}
             }, headers=self._headers())
             self.session_id = r.headers.get("mcp-session-id")

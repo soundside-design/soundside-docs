@@ -16,7 +16,8 @@ interface MCPResult {
   id: string;
   result?: {
     tools?: Array<{ name: string; description: string; inputSchema: object }>;
-    content?: Array<{ type: string; text?: string }>;
+    content?: Array<{ type: string; text?: string; uri?: string; name?: string; mimeType?: string }>;
+    structuredContent?: Record<string, unknown>;
   };
   error?: { code: number; message: string };
 }
@@ -66,17 +67,44 @@ class SoundsideClient {
 
   private extractToolResult(rpc: MCPResult): Record<string, unknown> {
     if (rpc.error) return { error: rpc.error };
+
+    // Prefer structuredContent (MCP 2025-11-25 format)
+    if (rpc.result?.structuredContent) {
+      const sc = rpc.result.structuredContent;
+      // FastMCP wraps returns in a 'result' key — unwrap if needed
+      if (sc.result !== undefined && Object.keys(sc).length === 1) {
+        return sc.result as Record<string, unknown>;
+      }
+      return sc;
+    }
+
+    // Fall back to content blocks
     const content = rpc.result?.content ?? [];
+    let parsed: Record<string, unknown> = {};
+
+    // Extract text content
     for (const c of content) {
       if (c.type === "text" && c.text) {
         try {
-          return JSON.parse(c.text);
+          parsed = JSON.parse(c.text);
         } catch {
-          return { text: c.text };
+          parsed = { text: c.text };
         }
+        break;
       }
     }
-    return rpc as unknown as Record<string, unknown>;
+
+    // Extract resource_link content blocks (MCP 2025-11-25)
+    const resourceLinks = content
+      .filter((c) => c.type === "resource_link")
+      .map((c) => ({ uri: c.uri, name: c.name, mimeType: c.mimeType }));
+    if (resourceLinks.length > 0) {
+      parsed._resourceLinks = resourceLinks;
+    }
+
+    return Object.keys(parsed).length > 0
+      ? parsed
+      : (rpc as unknown as Record<string, unknown>);
   }
 
   async connect(): Promise<void> {
@@ -87,7 +115,7 @@ class SoundsideClient {
         id: this.nextId(),
         method: "initialize",
         params: {
-          protocolVersion: "2024-11-05",
+          protocolVersion: "2025-11-25",
           capabilities: {},
           clientInfo: { name: "soundside-ts-example", version: "1.0" },
         },

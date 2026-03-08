@@ -89,7 +89,7 @@ class SoundsideX402Client:
         with httpx.Client(timeout=30) as c:
             r = c.post(self.endpoint, json={
                 "jsonrpc": "2.0", "id": self._next_id(), "method": "initialize",
-                "params": {"protocolVersion": "2024-11-05", "capabilities": {},
+                "params": {"protocolVersion": "2025-11-25", "capabilities": {},
                            "clientInfo": {"name": "x402-example", "version": "1.0"}},
             }, headers=self._headers())
             self.session_id = r.headers.get("mcp-session-id")

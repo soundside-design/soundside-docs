@@ -23,7 +23,7 @@ Content-Type: application/json
 Accept: application/json, text/event-stream
 
 {"jsonrpc":"2.0","id":"1","method":"initialize","params":{
-  "protocolVersion":"2024-11-05",
+  "protocolVersion":"2025-11-25",
   "capabilities":{},
   "clientInfo":{"name":"my-agent","version":"1.0"}
 }}
@@ -79,6 +79,8 @@ Returns a `resource_id` immediately. The video generates in the background — S
 }}
 ```
 
+> **MCP Tasks (2025-11-25):** Clients that support the `tasks` capability can also track async operations via `tasks/get` and `tasks/list`. The tool result will include a `resource_link` content block with the resource URI for convenient access.
+
 ### Edit Media
 
 ```json
@@ -133,9 +135,40 @@ Each generation tool supports multiple AI providers. If you don't specify one, S
 | **Sync** — result in response | `create_image` (most providers), `create_text`, `create_audio` (TTS), `create_artifact`, `edit_video`, `analyze_media`, `lib_*` |
 | **Async** — returns `resource_id`, completes later | `create_video` (all providers), `create_music`, `create_image` (luma, runway), `create_audio` (minimax TTS) |
 
-For async tools, listen for MCP `notifications/resources/updated` or poll with `lib_list`.
+For async tools, listen for MCP `notifications/resources/updated`, poll with `lib_list`, or use MCP tasks (see below).
 
-## 7. Library Organization
+## 7. MCP Tasks (Advanced)
+
+Soundside supports MCP **tasks** for tracking async operations. Clients that declare the `tasks` capability during `initialize` get structured progress tracking:
+
+- Tools like `create_video` declare `execution.taskSupport = "optional"`
+- Tool results include `resource_link` content blocks with `soundside://resources/{id}` URIs
+- Use `tasks/get` to poll status: `working` → `completed` or `failed`
+- Use `tasks/list` to see all active tasks
+
+Most clients (Claude, OpenClaw, etc.) handle tasks automatically. For raw HTTP usage, you can continue using `lib_list` polling.
+
+## 8. Tool Result Format
+
+Tool results use MCP's `structuredContent` (preferred) plus optional content blocks:
+
+```json
+{
+  "structuredContent": {
+    "resource_id": "abc-123",
+    "state": "pending",
+    "provider": "minimax"
+  },
+  "content": [
+    {"type": "text", "text": "Video generation started."},
+    {"type": "resource_link", "uri": "soundside://resources/abc-123", "name": "generated-video.mp4", "mimeType": "video/mp4"}
+  ]
+}
+```
+
+The `resource_link` block enables MCP clients to render download buttons, previews, or inline embeds.
+
+## 9. Library Organization
 
 Your media is organized in a library:
 - **Projects** — top-level containers
