@@ -1,8 +1,8 @@
 /**
- * Soundside MCP Client — TypeScript Example
+ * Soundside MCP Client — TypeScript SDK
  *
- * Demonstrates connecting to Soundside's MCP endpoint, listing tools,
- * generating an image, and analyzing the result.
+ * Production-grade client for Soundside's MCP endpoint with async polling,
+ * error handling, and pipeline support.
  *
  * Requirements: npm install axios
  * Usage: npx tsx soundside-client.ts <API_KEY>
@@ -13,13 +13,25 @@ import axios, { AxiosInstance, AxiosResponse } from "axios";
 
 interface MCPResult {
   jsonrpc: string;
-  id: string;
+  id?: string;
   result?: {
     tools?: Array<{ name: string; description: string; inputSchema: object }>;
     content?: Array<{ type: string; text?: string; uri?: string; name?: string; mimeType?: string }>;
     structuredContent?: Record<string, unknown>;
+    isError?: boolean;
   };
   error?: { code: number; message: string };
+  method?: string; // notification frames have 'method' but no 'id'
+}
+
+interface ResourceItem {
+  id?: string;
+  resource_id?: string;
+  state?: string;
+  status?: string;
+  storage_url?: string;
+  failure_reason?: string;
+  [key: string]: unknown;
 }
 
 class SoundsideClient {
@@ -57,16 +69,43 @@ class SoundsideClient {
 
   private parseSSE(data: string | object): MCPResult {
     if (typeof data !== "string") return data as MCPResult;
+
+    // Server sends multiple SSE frames: notifications (with 'method') then
+    // the actual JSON-RPC response (with 'id'). Find the response frame.
+    let lastData: MCPResult | null = null;
     for (const line of data.split("\n")) {
       if (line.startsWith("data:")) {
-        return JSON.parse(line.slice(5).trim());
+        try {
+          const obj: MCPResult = JSON.parse(line.slice(5).trim());
+          // JSON-RPC responses have 'id'; notifications have 'method' only
+          if (obj.id !== undefined) {
+            return obj;
+          }
+          lastData = obj; // keep as fallback
+        } catch {
+          // skip malformed JSON
+        }
       }
+    }
+    if (lastData !== null) {
+      return lastData;
     }
     return JSON.parse(data);
   }
 
   private extractToolResult(rpc: MCPResult): Record<string, unknown> {
     if (rpc.error) return { error: rpc.error };
+
+    // Check for tool-level errors (isError=true in MCP result)
+    if (rpc.result?.isError) {
+      const content = rpc.result?.content ?? [];
+      for (const c of content) {
+        if (c.type === "text" && c.text) {
+          throw new Error(`Tool error: ${c.text}`);
+        }
+      }
+      throw new Error("Tool error: unknown error");
+    }
 
     // Prefer structuredContent (MCP 2025-11-25 format)
     if (rpc.result?.structuredContent) {
@@ -117,7 +156,7 @@ class SoundsideClient {
         params: {
           protocolVersion: "2025-11-25",
           capabilities: {},
-          clientInfo: { name: "soundside-ts-example", version: "1.0" },
+          clientInfo: { name: "soundside-ts-sdk", version: "1.1" },
         },
       },
       { headers: this.headers() }
@@ -147,7 +186,8 @@ class SoundsideClient {
 
   async callTool(
     name: string,
-    args: Record<string, unknown>
+    args: Record<string, unknown>,
+    timeout?: number
   ): Promise<Record<string, unknown>> {
     const { data } = await this.client.post(
       "",
@@ -157,10 +197,88 @@ class SoundsideClient {
         method: "tools/call",
         params: { name, arguments: args },
       },
-      { headers: this.headers() }
+      {
+        headers: this.headers(),
+        timeout: timeout ?? 120_000,
+      }
     );
     const result = this.parseSSE(data);
     return this.extractToolResult(result);
+  }
+
+  /**
+   * Poll until an async resource completes.
+   *
+   * Checks lib_list every `pollIntervalMs` until:
+   * - state="completed" AND storage_url is present → returns the resource
+   * - state="failed" or "error" → throws Error
+   * - timeout exceeded → throws Error
+   *
+   * lib_list calls are free (zero credits).
+   */
+  async waitForResource(
+    resourceId: string,
+    timeoutMs: number = 300_000,
+    pollIntervalMs: number = 5_000
+  ): Promise<ResourceItem> {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      const result = await this.callTool("lib_list", {
+        entity_type: "resources",
+        resource_id: resourceId,
+      });
+
+      const items = (result.items ?? []) as ResourceItem[];
+      const item: ResourceItem = items[0] ?? (result as ResourceItem);
+      const state = item.state ?? item.status ?? "";
+
+      if (state === "failed" || state === "error") {
+        throw new Error(
+          `Resource ${resourceId} failed: ${item.failure_reason ?? "unknown"}`
+        );
+      }
+
+      if (state === "completed" && item.storage_url) {
+        return item;
+      }
+
+      await new Promise((r) => setTimeout(r, pollIntervalMs));
+    }
+
+    throw new Error(
+      `Resource ${resourceId} did not complete in ${timeoutMs / 1000}s`
+    );
+  }
+
+  /**
+   * Call a tool, then poll until the resource completes.
+   *
+   * Convenience wrapper for async tools (create_video, create_music, etc.)
+   * that combines callTool() + waitForResource().
+   */
+  async callToolAndWait(
+    name: string,
+    args: Record<string, unknown>,
+    timeoutMs: number = 300_000,
+    pollIntervalMs: number = 5_000,
+    callTimeoutMs?: number
+  ): Promise<Record<string, unknown>> {
+    const result = await this.callTool(name, args, callTimeoutMs);
+    const resourceId = result.resource_id as string | undefined;
+
+    if (!resourceId) {
+      // Sync tool — no resource_id to poll
+      return result;
+    }
+
+    const state = (result.state as string) ?? "";
+    if (state === "completed" && result.storage_url) {
+      // Already complete
+      return result;
+    }
+
+    // Async — poll until done
+    return await this.waitForResource(resourceId, timeoutMs, pollIntervalMs);
   }
 }
 
@@ -189,7 +307,7 @@ async function main() {
     console.log(`  • ${t.name}: ${(t.description ?? "").slice(0, 60)}`);
   }
 
-  // 3. Generate an image
+  // 3. Generate an image (sync — returns immediately)
   console.log("\n🎨 Generating image (vertex)...");
   const t0 = Date.now();
   const imageResult = await client.callTool("create_image", {
@@ -228,6 +346,32 @@ async function main() {
   console.log(
     `  ${String(textResult.text ?? JSON.stringify(textResult)).slice(0, 200)}`
   );
+
+  // 6. Demo: callToolAndWait (generates video and polls until complete)
+  if (imageResult.resource_id) {
+    console.log("\n🎬 Generating video with callToolAndWait (minimax)...");
+    console.log("   This calls create_video then automatically polls until complete.");
+    const vt0 = Date.now();
+    try {
+      const video = await client.callToolAndWait(
+        "create_video",
+        {
+          prompt: "Gentle waves lapping at a golden shore at sunset",
+          provider: "minimax",
+          first_frame: imageResult.resource_id,
+        },
+        600_000 // 10 min timeout for video
+      );
+      const velapsed = ((Date.now() - vt0) / 1000).toFixed(1);
+      console.log(`  ✅ Video complete in ${velapsed}s`);
+      console.log(`  Resource ID: ${video.id ?? video.resource_id ?? "N/A"}`);
+      if (video.storage_url) {
+        console.log(`  URL: ${String(video.storage_url).slice(0, 80)}...`);
+      }
+    } catch (err) {
+      console.log(`  ⚠️  Video generation failed: ${err}`);
+    }
+  }
 }
 
 main().catch(console.error);
