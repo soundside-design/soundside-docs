@@ -115,20 +115,22 @@ All providers are **async** — returns a `resource_id` immediately, completes i
 
 ## create_audio
 
-Create audio content. Supports multiple modes: TTS, transcription, voice cloning, voice design, and voice listing.
+Create audio content. Supports multiple modes: TTS, sound effects, transcription, voice cloning, voice design, and voice listing.
 
-**Providers:** `minimax`, `vertex`
+**Providers:** `minimax`, `vertex`, `runway` (sound effects via ElevenLabs), `creative_freedom` (open-source CosyVoice)
 
 | Parameter | Required | Type | Description |
 |-----------|----------|------|-------------|
 | `provider` | yes | string | AI provider |
-| `mode` | no | string | `tts` (default), `transcribe`, `voice_clone`, `voice_design`, `list_voices` |
-| `text` | no | string | Text for TTS |
-| `voice_id` | no | string | Voice ID (default: `female-shaonv`) |
+| `mode` | no | string | `tts` (default), `sound_effect`, `transcribe`, `voice_clone`, `voice_design`, `list_voices` |
+| `prompt` | no | string | Text for TTS speech or sound effect description |
+| `text` | no | string | _(Deprecated — use `prompt`)_ Backward-compatible alias for `prompt` |
+| `voice_id` | no | string | Voice ID (default: `Calm_Woman` for MiniMax, `en-US-Journey-F` for Vertex) |
 | `source` | no | string | Resource ID or URL of audio/video to transcribe |
 | `language_code` | no | string | Language for transcription (default: `en-US`, v1 supports EN-US only) |
 | `include_word_timestamps` | no | boolean | Per-word timestamps in transcription (default: true) |
 | `audio_file_id` | no | string | Resource ID for voice cloning source |
+| `duration` | no | number | Duration for sound effects (seconds) |
 | `speed` | no | number | Speech speed multiplier |
 | `format` | no | string | Output format: `mp3`, `wav`, `flac`, `pcm` |
 | `advanced_options` | no | object | Provider-specific settings |
@@ -140,8 +142,20 @@ Create audio content. Supports multiple modes: TTS, transcription, voice cloning
   "arguments": {
     "provider": "minimax",
     "mode": "tts",
-    "text": "In a quiet forest, a small fox named Felix woke with the sunrise.",
-    "voice_id": "female-shaonv"
+    "prompt": "In a quiet forest, a small fox named Felix woke with the sunrise.",
+    "voice_id": "Calm_Woman"
+  }
+}
+```
+
+**Example — Sound effect:**
+```json
+{
+  "name": "create_audio",
+  "arguments": {
+    "provider": "runway",
+    "mode": "sound_effect",
+    "prompt": "thunder rolling across a mountain valley, cinematic"
   }
 }
 ```
@@ -241,7 +255,7 @@ Create business artifacts: presentations, charts, documents, or diagrams.
 | `data` | no | object | Chart data |
 | `sections` | no | array | Document sections |
 | `diagram_code` | no | string | Mermaid diagram syntax |
-| `output_format` | no | string | Chart: `png`/`svg`/`html`. Document: `docx`/`pdf`/`html` |
+| `output_format` | no | string | Chart: `html` (default)/`png`/`svg`. Document: `docx`/`pdf`/`html` |
 | `width` / `height` | no | integer | Output dimensions in pixels |
 | `provider` | no | string | `gamma` for premium AI presentations |
 
