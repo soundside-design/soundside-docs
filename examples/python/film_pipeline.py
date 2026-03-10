@@ -22,106 +22,19 @@ Usage:
     SOUNDSIDE_API_KEY=mcp_... python film_pipeline.py
 """
 
-import httpx
-import json
 import os
 import sys
 import time
 
+from soundside_client import SoundsideClient as _BaseSoundsideClient
 
-class SoundsideClient:
-    """Minimal MCP client for Soundside."""
 
-    def __init__(self, api_key: str, endpoint: str = "https://mcp.soundside.ai/mcp"):
-        self.api_key = api_key
-        self.endpoint = endpoint
-        self.session_id = None
-        self._msg_id = 0
-
-    def _next_id(self) -> str:
-        self._msg_id += 1
-        return str(self._msg_id)
-
-    def _headers(self) -> dict:
-        h = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-            "Accept": "application/json, text/event-stream",
-        }
-        if self.session_id:
-            h["mcp-session-id"] = self.session_id
-        return h
-
-    def _parse(self, text: str) -> dict:
-        """Parse SSE response — server emits notification frames before the
-        actual JSON-RPC result. Find the frame with 'id' (the response)."""
-        last_data = None
-        for line in text.splitlines():
-            if line.startswith("data:"):
-                try:
-                    obj = json.loads(line[5:].strip())
-                    if "id" in obj:
-                        return obj
-                    last_data = obj
-                except json.JSONDecodeError:
-                    pass
-        if last_data is not None:
-            return last_data
-        return json.loads(text)
-
-    def connect(self):
-        with httpx.Client(timeout=30) as c:
-            r = c.post(self.endpoint, json={
-                "jsonrpc": "2.0", "id": self._next_id(), "method": "initialize",
-                "params": {"protocolVersion": "2025-11-25", "capabilities": {},
-                           "clientInfo": {"name": "film-pipeline", "version": "1.0"}}
-            }, headers=self._headers())
-            self.session_id = r.headers.get("mcp-session-id")
+class SoundsideClient(_BaseSoundsideClient):
+    """Film pipeline client — thin wrapper adding a `call()` alias."""
 
     def call(self, tool: str, args: dict, timeout: int = 300) -> dict:
-        with httpx.Client(timeout=timeout) as c:
-            r = c.post(self.endpoint, json={
-                "jsonrpc": "2.0", "id": self._next_id(), "method": "tools/call",
-                "params": {"name": tool, "arguments": args}
-            }, headers=self._headers())
-            rpc = self._parse(r.text)
-            if "error" in rpc:
-                raise RuntimeError(f"MCP error: {rpc['error']}")
-            result = rpc.get("result", {})
-            # Detect tool-level errors (isError=True in MCP result)
-            if result.get("isError"):
-                for ct in result.get("content", []):
-                    if ct.get("type") == "text":
-                        raise RuntimeError(f"Tool error ({tool}): {ct['text']}")
-                raise RuntimeError(f"Tool error ({tool}): unknown error")
-            for content in result.get("content", []):
-                if content.get("type") == "text":
-                    try:
-                        return json.loads(content["text"])
-                    except json.JSONDecodeError:
-                        return {"text": content["text"]}
-            return rpc
-
-    def wait_for_resource(self, resource_id: str, timeout: int = 300) -> dict:
-        """Poll until an async resource completes and storage_url is available.
-        lib_list returns {items: [...]} so we read resource state from items[0].
-        """
-        start = time.time()
-        while time.time() - start < timeout:
-            result = self.call("lib_list", {
-                "entity_type": "resources",
-                "resource_id": resource_id,
-            })
-            # lib_list wraps results: {success, status, items: [...]}
-            item = result.get("items", [{}])[0] if result.get("items") else result
-            state = item.get("state") or item.get("status", "")
-            if state in ("failed", "error"):
-                raise RuntimeError(f"Resource {resource_id} failed: {item}")
-            # Wait for both completion AND storage_url to be populated
-            if state == "completed" and item.get("storage_url"):
-                return item
-            time.sleep(5)
-        raise TimeoutError(f"Resource {resource_id} did not complete in {timeout}s")
+        """Alias for call_tool() with longer default timeout for generation."""
+        return self.call_tool(tool, args, timeout=timeout)
 
 
 
