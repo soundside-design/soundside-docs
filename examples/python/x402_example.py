@@ -5,10 +5,17 @@ Calls Soundside MCP tools using x402 crypto micropayments (USDC on Base).
 No API key or Soundside account needed — just a funded wallet.
 
 Requirements:
-    uv run --with "x402[evm]" --with mcp python x402_example.py
+    # x402 is not on PyPI — install from GitHub:
+    pip install "git+https://github.com/coinbase/x402.git#subdirectory=python/x402&egg=x402[evm]" httpx eth-account
+
+    # Python >= 3.10 required
 
 Usage:
     WALLET_PRIVATE_KEY=0x... python x402_example.py
+
+Note:
+    This is the async version. For a simpler sync example suitable for
+    use in agents and scripts, see x402_sync_example.py.
 """
 
 import asyncio
