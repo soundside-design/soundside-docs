@@ -27,7 +27,7 @@ POST https://mcp.soundside.ai/mcp
 |------|-------------|-----------|
 | `create_image` | Text-to-image, character references | Vertex AI, Grok, Runway, MiniMax, Luma |
 | `create_video` | Text-to-video, image-to-video, video extension | Vertex AI (Veo 3.1), Runway, MiniMax, Luma, Grok |
-| `create_audio` | TTS, transcription (STT), voice cloning, voice design | MiniMax, Vertex AI |
+| `create_audio` | TTS, transcription (STT), voice cloning, voice design | MiniMax, Vertex AI, Runway |
 | `create_music` | Music from lyrics and style prompts | MiniMax |
 | `create_text` | LLM chat completions, structured output | Vertex AI (Gemini), Grok, MiniMax |
 | `create_artifact` | Charts, presentations, documents, diagrams | Plotly, PPTX, WeasyPrint, Mermaid, Gamma |
@@ -37,7 +37,7 @@ POST https://mcp.soundside.ai/mcp
 
 | Tool | What It Does |
 |------|-------------|
-| `edit_video` | 22 actions: trim, concat, crossfade, Ken Burns, mix/replace audio, text overlays, color grading, film grain, speed ramp, split screen, and more |
+| `edit_video` | 21 actions: trim, concat, crossfade, Ken Burns, mix/replace audio, text overlays, color grading, film grain, speed ramp, split screen, and more |
 | `analyze_media` | Technical analysis (ffprobe), AI vision QA (Gemini), quality scoring |
 
 ### Library Management

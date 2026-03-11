@@ -132,8 +132,8 @@ Each generation tool supports multiple AI providers. If you don't specify one, S
 
 | Behavior | Tools |
 |----------|-------|
-| **Sync** — result in response | `create_image` (most providers), `create_text`, `create_audio` (TTS), `create_artifact`, `edit_video`, `analyze_media`, `lib_*` |
-| **Async** — returns `resource_id`, completes later | `create_video` (all providers), `create_music`, `create_image` (luma, runway), `create_audio` (minimax TTS) |
+| **Sync** — result in response | `create_image` (most providers), `create_text`, `create_audio` (vertex TTS), `create_artifact`, `edit_video`, `analyze_media`, `lib_*` |
+| **Async** — returns `resource_id`, completes later | `create_video` (all providers), `create_music`, `create_image` (luma, runway), `create_audio` (minimax TTS, runway sound_effect) |
 
 For async tools, listen for MCP `notifications/resources/updated`, poll with `lib_list`, or use MCP tasks (see below).
 

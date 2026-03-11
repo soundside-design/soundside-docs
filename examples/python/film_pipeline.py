@@ -82,7 +82,9 @@ def main():
                 "Today would be his greatest adventure yet.",
     })
     narr_id = narr["resource_id"]
-    print(f"   Narration: {narr_id} ({time.time()-t0:.1f}s)")
+    print(f"   Submitted: {narr_id}")
+    client.wait_for_resource(narr_id)
+    print(f"   Narration ready ({time.time()-t0:.1f}s)")
 
     # --- Step 4: Generate music ---
     print("\n🎵 Step 4: Generating background music (async)...")
