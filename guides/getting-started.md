@@ -37,7 +37,7 @@ The response includes a `mcp-session-id` header — include it in all subsequent
 {"jsonrpc":"2.0","id":"2","method":"tools/list","params":{}}
 ```
 
-Returns all 12 tools with their full input schemas. Always read schemas from this response — don't hardcode argument assumptions.
+Returns all 11 tools with their full input schemas. Always read schemas from this response — don't hardcode argument assumptions.
 
 ## 4. Call a Tool
 

@@ -1,6 +1,6 @@
 # Tool Reference
 
-Complete reference for all 12 Soundside MCP tools. Always call `tools/list` at runtime to get the canonical schemas — this document is a human-readable companion.
+Complete reference for all 11 Soundside MCP tools. Always call `tools/list` at runtime to get the canonical schemas — this document is a human-readable companion.
 
 **Live pricing:** `GET https://mcp.soundside.ai/api/x402/status`
 
@@ -186,8 +186,8 @@ Generate music from lyrics and a style prompt.
 | `provider` | yes | string | `minimax` |
 | `lyrics` | no | string | Song lyrics (can be empty for instrumental) |
 | `prompt` | no | string | Style/genre description |
-| `refer_voice` | no | string | Reference voice URL |
-| `refer_instrumental` | no | string | Reference instrumental URL |
+| `refer_voice` | no | string | _(Deprecated — use `reference_audio_resource_id` with `reference_audio_purpose: "voice"`)_ Reference voice URL |
+| `refer_instrumental` | no | string | _(Deprecated — use `reference_audio_resource_id` with `reference_audio_purpose: "instrumental"`)_ Reference instrumental URL |
 | `reference_audio_resource_id` | no | string | Resource ID for reference audio |
 | `reference_audio_purpose` | no | string | `song`, `voice`, or `instrumental` |
 | `format` | no | string | Output: `mp3`, `wav`, `pcm` |
@@ -241,7 +241,7 @@ Generate text using LLM chat completions. Supports structured JSON output.
 
 ## create_artifact
 
-Create business artifacts: presentations, charts, documents, or diagrams.
+Create business artifacts: presentations, charts, documents, or diagrams. Supports a **bundle mode** for generating multiple related artifacts from a single brief (e.g., a slide deck + chart + document in one call).
 
 **Providers:** Local rendering (default: PPTX, Plotly, WeasyPrint, Mermaid) or `gamma` for AI-generated presentations.
 
@@ -258,6 +258,8 @@ Create business artifacts: presentations, charts, documents, or diagrams.
 | `output_format` | no | string | Chart: `html` (default)/`png`/`svg`. Document: `docx`/`pdf`/`html` |
 | `width` / `height` | no | integer | Output dimensions in pixels |
 | `provider` | no | string | `gamma` for premium AI presentations |
+| `outputs` | no | string[] | **Bundle mode.** List of output formats to produce (e.g., `["pptx", "png"]`). When provided, generates multiple artifacts in one call. |
+| `brief` | no | string | **Bundle mode.** High-level description of deliverables. Used with `outputs` to drive multi-artifact generation. |
 
 **Example — Chart:**
 ```json
@@ -302,26 +304,12 @@ Create business artifacts: presentations, charts, documents, or diagrams.
 }
 ```
 
----
-
-## create_artifact_bundle
-
-Generate multiple related artifacts from a single brief.
-
-| Parameter | Required | Type | Description |
-|-----------|----------|------|-------------|
-| `brief` | yes | string | High-level description of deliverables |
-| `outputs` | yes | string[] | Output formats: `pptx`, `docx`, `png`, `svg`, etc. |
-| `data` | no | object | Chart data |
-| `slides` | no | array | Slide definitions |
-| `sections` | no | array | Document sections |
-| `brand` | no | string | Brand kit applied to all artifacts |
-
-**Example:**
+**Example — Bundle mode (multiple artifacts from one brief):**
 ```json
 {
-  "name": "create_artifact_bundle",
+  "name": "create_artifact",
   "arguments": {
+    "type": "presentation",
     "brief": "Quarterly investor update with revenue chart and slide deck",
     "outputs": ["pptx", "png"],
     "data": {
@@ -571,7 +559,7 @@ List and search library entities.
 
 | Parameter | Required | Type | Description |
 |-----------|----------|------|-------------|
-| `entity_type` | yes | string | `projects`, `collections`, `resources`, `lineage`, `brand_kits` |
+| `entity_type` | yes | string | `projects`, `collections`, `resources`, `lineage`, `brand_kits`, `credits` |
 | `project_id` | no | string | Filter by project |
 | `collection_id` | no | string | Filter by collection |
 | `resource_id` | no | string | Get single resource |
@@ -589,6 +577,16 @@ List and search library entities.
   "arguments": {
     "entity_type": "resources",
     "resource_id": "<resource-id>"
+  }
+}
+```
+
+**Example — Check credit balance:**
+```json
+{
+  "name": "lib_list",
+  "arguments": {
+    "entity_type": "credits"
   }
 }
 ```

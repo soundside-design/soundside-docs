@@ -2,7 +2,7 @@
 
 **AI Media Production Platform for Agents**
 
-Soundside exposes 12 MCP tools for generating, editing, and analyzing media — images, video, audio, music, text, and business artifacts. Connect any MCP client. Pay with an API key (credits) or crypto (x402 USDC on Base, no account needed).
+Soundside exposes 11 MCP tools for generating, editing, and analyzing media — images, video, audio, music, text, and business artifacts. Connect any MCP client. Pay with an API key (credits) or crypto (x402 USDC on Base, no account needed).
 
 ## Quick Start
 
@@ -19,7 +19,7 @@ POST https://mcp.soundside.ai/mcp
 {"jsonrpc":"2.0","id":"1","method":"tools/list","params":{}}
 ```
 
-## Tools (12)
+## Tools (11)
 
 ### Generation
 
@@ -30,8 +30,7 @@ POST https://mcp.soundside.ai/mcp
 | `create_audio` | TTS, transcription (STT), voice cloning, voice design | MiniMax, Vertex AI, Runway |
 | `create_music` | Music from lyrics and style prompts | MiniMax |
 | `create_text` | LLM chat completions, structured output | Vertex AI (Gemini), Grok, MiniMax |
-| `create_artifact` | Charts, presentations, documents, diagrams | Plotly, PPTX, WeasyPrint, Mermaid, Gamma |
-| `create_artifact_bundle` | Multi-artifact packages from a single brief | Combined |
+| `create_artifact` | Charts, presentations, documents, diagrams; bundle mode for multi-artifact packages from a single brief | Plotly, PPTX, WeasyPrint, Mermaid, Gamma |
 
 ### Editing & Analysis
 
@@ -44,7 +43,7 @@ POST https://mcp.soundside.ai/mcp
 
 | Tool | What It Does |
 |------|-------------|
-| `lib_list` | Browse projects, collections, resources, lineage, brand kits |
+| `lib_list` | Browse projects, collections, resources, lineage, brand kits; query credit balance |
 | `lib_manage` | CRUD for projects, collections, resources, brand kits |
 | `lib_share` | Share projects with other users by email |
 
@@ -75,7 +74,7 @@ See [x402 Guide](./guides/x402.md) for full setup.
 
 - **[Getting Started](./guides/getting-started.md)** — First MCP connection in 5 minutes
 - **[x402 Pay-Per-Call](./guides/x402.md)** — Crypto payments, no account needed
-- **[Tool Reference](./guides/tools.md)** — Detailed docs for all 12 tools
+- **[Tool Reference](./guides/tools.md)** — Detailed docs for all 11 tools
 
 ## Examples
 
