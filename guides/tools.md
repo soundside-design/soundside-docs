@@ -352,7 +352,7 @@ Edit media with 21 compositing, effects, and transformation actions. Works on vi
 | `burn_subtitles` | Burn SRT/VTT/ASS subtitles | `resource_id`, `subtitle_source` |
 | `pad_audio` | Pad audio to target duration | `resource_id`, `target_duration`, `audio_position` |
 | `loop` | Loop media | `resource_id` |
-| `custom_ffmpeg` | Raw FFmpeg args (alias for `custom` with `ffmpeg_args`) | `resource_id`, `ffmpeg_args` |
+| `custom` | Raw FFmpeg command (pass `ffmpeg_args`) | `resource_id`, `ffmpeg_args` |
 
 ### Common Parameters
 
@@ -411,7 +411,7 @@ Edit media with 21 compositing, effects, and transformation actions. Works on vi
   "name": "edit_video",
   "arguments": {
     "resource_id": "<video-id>",
-    "action": "custom_ffmpeg",
+    "action": "custom",
     "ffmpeg_args": "-an -c:v copy"
   }
 }
