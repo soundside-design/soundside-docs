@@ -343,7 +343,7 @@ Edit media with 21 compositing, effects, and transformation actions. Works on vi
 | `extract_frame` | Single frame as image | `resource_id`, `timestamp` |
 | `extract_frames` | Multiple frames | `resource_id`, `frame_interval_sec`, `start_sec`, `end_sec` |
 | `extract_audio` | Audio track as file | `resource_id` |
-| `ken_burns` | Pan/zoom on still image | `resource_id`, `zoom_start`, `zoom_end`, `pan_direction` (`center`, `left_to_right`, `right_to_left`, `top_to_bottom`, `bottom_to_top`, `documentary`, `dramatic`, `reveal`, **`none`/`static`** for pure zoom), `easing` |
+| `ken_burns` | Pan/zoom on still image | `resource_id`, `zoom_start`, `zoom_end`, `pan_direction` (`center`, `left_to_right`, `right_to_left`, `top_to_bottom`, `bottom_to_top`, `documentary`, `dramatic`, `reveal`, **`static`** for pure zoom), `easing` |
 | `speed_ramp` | Gradual speed change | `resource_id`, `speed_start`, `speed_end`, `easing` |
 | `film_grain` | Add film grain texture | `resource_id`, `grain_intensity` (1-100) |
 | `vignette` | Dark edge vignette | `resource_id`, `vignette_angle` |
@@ -424,7 +424,7 @@ Edit media with 21 compositing, effects, and transformation actions. Works on vi
 - **`audio_delay_sec`** offsets narration start time — use this when narrations for different clips are mixed sequentially into one composite video file.
 - **`duration_mode`** for mix_audio: `shortest` (default), `longest`, or `first` (video controls length).
 - **`text_start_sec` / `text_end_sec`** gate text overlays to a specific window — without them, text runs for the full video duration.
-- **Ken Burns** converts still images into video with smooth pan/zoom — great for extending scenes. Use `pan_direction: "none"` or `"static"` for a pure zoom-only effect with no lateral movement.
+- **Ken Burns** converts still images into video with smooth pan/zoom — great for extending scenes. Use `pan_direction: "static"` for a pure zoom-only effect with no lateral movement.
 - **CJK text** (Korean, Chinese, Japanese) is automatically rendered using the Noto Sans CJK font — no extra configuration needed.
 
 ---
@@ -542,7 +542,7 @@ Different AI video providers output different native resolutions. The `concat` a
 ```json
 {"name": "edit_video", "arguments": {
   "resource_id": "<clip-id>",
-  "action": "custom_ffmpeg",
+  "action": "custom",
   "ffmpeg_args": "-vf \"scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2\" -c:v libx264 -crf 18 -pix_fmt yuv420p -r 24 -an"
 }}
 ```
