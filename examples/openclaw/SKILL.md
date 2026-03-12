@@ -39,8 +39,8 @@ Once connected, your agent has access to:
 ### Generation (6 tools)
 - `create_image` — Text-to-image across 5 providers (Vertex AI, Grok, Runway, MiniMax, Luma)
 - `create_video` — Text/image-to-video across 5 providers (Vertex Veo 3.1, Runway, MiniMax, Luma, Grok)
-- `create_audio` — TTS, transcription, voice cloning (MiniMax, Vertex AI)
-- `create_music` — Music from lyrics + style prompt (MiniMax)
+- `create_audio` — TTS, transcription, voice cloning, sound effects (MiniMax, Vertex AI, Runway, Creative Freedom)
+- `create_music` — Music from lyrics + style prompt (MiniMax, Creative Freedom)
 - `create_text` — LLM completions with structured output (Vertex Gemini, Grok, MiniMax)
 - `create_artifact` — Charts, presentations, documents, diagrams
 

@@ -27,8 +27,8 @@ POST https://mcp.soundside.ai/mcp
 |------|-------------|-----------|
 | `create_image` | Text-to-image, character references | Vertex AI, Grok, Runway, MiniMax, Luma |
 | `create_video` | Text-to-video, image-to-video, video extension | Vertex AI (Veo 3.1), Runway, MiniMax, Luma, Grok |
-| `create_audio` | TTS, transcription (STT), voice cloning, voice design | MiniMax, Vertex AI, Runway |
-| `create_music` | Music from lyrics and style prompts | MiniMax |
+| `create_audio` | TTS, transcription (STT), voice cloning, sound effects, voice design | MiniMax, Vertex AI, Runway, Creative Freedom |
+| `create_music` | Music from lyrics and style prompts | MiniMax, Creative Freedom |
 | `create_text` | LLM chat completions, structured output | Vertex AI (Gemini), Grok, MiniMax |
 | `create_artifact` | Charts, presentations, documents, diagrams; bundle mode for multi-artifact packages from a single brief | Plotly, PPTX, WeasyPrint, Mermaid, Gamma |
 
