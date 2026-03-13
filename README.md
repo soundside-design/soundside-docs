@@ -49,7 +49,7 @@ POST https://mcp.soundside.ai/mcp
 
 ## Pricing Philosophy
 
-Soundside aims to break even on provider pass-through costs with a small margin (~10%). The real value is in the editing engine, library management, and self-hosted models — those are priced at a flat $0.01/call.
+Soundside aims to break even on provider pass-through costs with a small margin (~10%). The real value is in the editing engine, library management, and self-hosted models — those are priced at $0.01/call ($0.03 for analyze_media vision_qa).
 
 **Live pricing is always available at:**
 ```

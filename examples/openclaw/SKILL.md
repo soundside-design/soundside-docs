@@ -249,7 +249,7 @@ This keeps workflow state durable without local storage.
 
 Live pricing: `GET https://mcp.soundside.ai/api/x402/status`
 
-Soundside charges near-cost on provider pass-through (~10% margin). Editing and analysis are $0.01/call. A typical video pipeline (image → video → edit → analyze) costs $0.50-3.00 depending on provider.
+Soundside charges near-cost on provider pass-through (~10% margin). Editing is $0.01/call. Analysis is $0.01 (technical/quality) or $0.03 (vision_qa). A typical video pipeline (image → video → edit → analyze) costs $0.50-3.00 depending on provider.
 
 ## Docs
 
