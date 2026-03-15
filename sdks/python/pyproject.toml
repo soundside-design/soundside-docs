@@ -1,0 +1,20 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "soundside"
+version = "0.1.0"
+description = "Python SDK for the Soundside MCP media generation platform"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = ["httpx>=0.27"]
+
+[project.urls]
+Homepage = "https://soundside.ai"
+Documentation = "https://soundside.ai/docs"
+Repository = "https://github.com/soundside-design/soundside-docs"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/soundside"]

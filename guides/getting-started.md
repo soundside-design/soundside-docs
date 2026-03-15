@@ -37,7 +37,7 @@ The response includes a `mcp-session-id` header — include it in all subsequent
 {"jsonrpc":"2.0","id":"2","method":"tools/list","params":{}}
 ```
 
-Returns all 11 tools with their full input schemas. Always read schemas from this response — don't hardcode argument assumptions.
+Returns all available tools with their full input schemas. Always read schemas from this response — don't hardcode argument assumptions.
 
 ## 4. Call a Tool
 
@@ -85,7 +85,7 @@ Returns a `resource_id` immediately. The video generates in the background — S
 
 ```json
 {"jsonrpc":"2.0","id":"6","method":"tools/call","params":{
-  "name":"edit_video",
+  "name":"compose_media",
   "arguments":{
     "resource_id":"<resource-id>",
     "action":"add_text",
@@ -132,7 +132,7 @@ Each generation tool supports multiple AI providers. If you don't specify one, S
 
 | Behavior | Tools |
 |----------|-------|
-| **Sync** — result in response | `create_image` (most providers), `create_text`, `create_audio` (vertex TTS), `create_artifact`, `edit_video`, `analyze_media`, `lib_*` |
+| **Sync** — result in response | `create_image` (most providers), `create_text`, `create_audio` (vertex TTS), `create_artifact`, `edit_video`, `compose_media`, `edit_audio`, `apply_effect`, `extract_media`, `analyze_media`, `lib_*` |
 | **Async** — returns `resource_id`, completes later | `create_video` (all providers), `create_music`, `create_image` (luma, runway), `create_audio` (minimax TTS, runway sound_effect) |
 
 For async tools, listen for MCP `notifications/resources/updated`, poll with `lib_list`, or use MCP tasks (see below).

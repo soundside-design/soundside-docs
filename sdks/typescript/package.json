@@ -1,0 +1,42 @@
+{
+  "name": "soundside",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for the Soundside MCP media generation platform",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "tsc"
+  },
+  "keywords": [
+    "soundside",
+    "mcp",
+    "ai",
+    "media",
+    "video",
+    "image",
+    "audio"
+  ],
+  "license": "MIT",
+  "homepage": "https://soundside.ai",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/soundside-design/soundside-docs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

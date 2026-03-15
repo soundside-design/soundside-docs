@@ -324,7 +324,7 @@ Create business artifacts: presentations, charts, documents, or diagrams. Suppor
 
 ## edit_video
 
-Edit media with 21 compositing, effects, and transformation actions. Works on video, audio, and images.
+Core video transforms: trim, join, speed, color, loops, subtitles, and custom FFmpeg.
 
 **Provider:** `soundside.ai` (platform editing engine, FFmpeg-based)
 
@@ -334,35 +334,12 @@ Edit media with 21 compositing, effects, and transformation actions. Works on vi
 |--------|-------------|----------------|
 | `trim` | Extract a time range | `resource_id`, `start_sec`, `duration_sec` |
 | `concat` | Join multiple clips | `resource_ids` (auto-normalizes resolution) |
-| `crossfade` | Transition between clips | `resource_ids`, `duration_sec` |
-| `add_text` | Text overlay | `resource_id`, `text`, `position`, `fontsize`, `fontcolor`, `text_start_sec`, `text_end_sec` |
+| `crossfade` | Transition between clips | `resource_ids`, `duration_sec`, `transition` |
 | `adjust_speed` | Speed up/slow down | `resource_id`, `factor`, `smooth` (AI frame interp) |
-| `replace_audio` | Swap audio track | `resource_id`, `audio_source` |
-| `mix_audio` | Layer audio over video | `resource_id`, `audio_source`, `video_volume`, `overlay_volume`, `duration_mode`, `audio_delay_sec` |
+| `loop` | Loop media to target duration | `resource_id`, `target_duration` |
 | `color_grade` | Adjust brightness/contrast/saturation | `resource_id`, `brightness`, `contrast`, `saturation` |
-| `extract_frame` | Single frame as image | `resource_id`, `timestamp` |
-| `extract_frames` | Multiple frames | `resource_id`, `frame_interval_sec`, `start_sec`, `end_sec` |
-| `extract_audio` | Audio track as file | `resource_id` |
-| `ken_burns` | Pan/zoom on still image | `resource_id`, `zoom_start`, `zoom_end`, `pan_direction` (`center`, `left_to_right`, `right_to_left`, `top_to_bottom`, `bottom_to_top`, `documentary`, `dramatic`, `reveal`, **`static`** for pure zoom), `easing` |
-| `speed_ramp` | Gradual speed change | `resource_id`, `speed_start`, `speed_end`, `easing` |
-| `film_grain` | Add film grain texture | `resource_id`, `grain_intensity` (1-100) |
-| `vignette` | Dark edge vignette | `resource_id`, `vignette_angle` |
-| `split_screen` | Side-by-side comparison | `resource_ids`, `layout`, `labels`, `gap` |
-| `overlay` | Picture-in-picture | `resource_id`, `overlay_source`, `overlay_position`, `overlay_scale`, `overlay_opacity` |
+| `custom` | Raw FFmpeg command | `resource_id` or `resource_ids`, `ffmpeg_args`, `output_format` |
 | `burn_subtitles` | Burn SRT/VTT/ASS subtitles | `resource_id`, `subtitle_source` |
-| `pad_audio` | Pad audio to target duration | `resource_id`, `target_duration`, `audio_position` |
-| `loop` | Loop media | `resource_id` |
-| `custom` | Raw FFmpeg command (pass `ffmpeg_args`) | `resource_id`, `ffmpeg_args` |
-
-### Common Parameters
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `action` | string (required) | One of the 21 actions above |
-| `resource_id` | string | Source resource for single-input actions |
-| `resource_ids` | string[] | Source resources for multi-input actions (concat, crossfade, split_screen) |
-| `advanced_options` | object | Extra settings (e.g., `{"bg_color": "rgba(0,0,0,0.5)"}` for text background, `{"duration": 5}` for ken_burns) |
-| `project_id` | string | Library project UUID |
 
 **Example — Concat with auto-normalization:**
 ```json
@@ -371,36 +348,6 @@ Edit media with 21 compositing, effects, and transformation actions. Works on vi
   "arguments": {
     "action": "concat",
     "resource_ids": ["<id-1>", "<id-2>", "<id-3>"]
-  }
-}
-```
-
-**Example — Mix narration into video:**
-```json
-{
-  "name": "edit_video",
-  "arguments": {
-    "resource_id": "<video-id>",
-    "action": "mix_audio",
-    "audio_source": "<narration-audio-id>",
-    "video_volume": 0.0,
-    "overlay_volume": 1.0,
-    "duration_mode": "first"
-  }
-}
-```
-
-**Example — Ken Burns on a still image:**
-```json
-{
-  "name": "edit_video",
-  "arguments": {
-    "resource_id": "<image-id>",
-    "action": "ken_burns",
-    "zoom_start": 1.0,
-    "zoom_end": 1.3,
-    "pan_direction": "documentary",
-    "advanced_options": {"duration": 8}
   }
 }
 ```
@@ -420,12 +367,145 @@ Edit media with 21 compositing, effects, and transformation actions. Works on vi
 ### Tips
 
 - **Resolution:** `concat` normalizes to 1280×720 (720P) by default. For 1080P delivery, normalize first. See [Resolution Strategy](#resolution-strategy) below.
+- **`custom`** automatically appends `-pix_fmt yuv420p` when omitted — a safety net for social media compatibility.
+
+---
+
+## compose_media
+
+Layer text, images, or videos onto a base video.
+
+**Provider:** `soundside.ai`
+
+### Actions
+
+| Action | What It Does | Key Parameters |
+|--------|-------------|----------------|
+| `add_text` | Text overlay | `resource_id`, `text`, `position`, `fontsize`, `fontcolor`, `text_start_sec`, `text_end_sec` |
+| `overlay` | Picture-in-picture | `resource_id`, `overlay_source`, `overlay_position`, `overlay_scale`, `overlay_opacity` |
+| `split_screen` | Side-by-side comparison | `resource_ids`, `layout`, `labels`, `gap` |
+
+**Example — Timed text overlay:**
+```json
+{
+  "name": "compose_media",
+  "arguments": {
+    "resource_id": "<video-id>",
+    "action": "add_text",
+    "text": "Seoul, 1987",
+    "position": "bottom",
+    "text_start_sec": 1.0,
+    "text_end_sec": 6.0
+  }
+}
+```
+
+### Tips
+
+- **`text_start_sec` / `text_end_sec`** gate text overlays to a specific window — without them, text runs for the full video duration.
+- **CJK text** (Korean, Chinese, Japanese) is automatically rendered using the Noto Sans CJK font — no extra configuration needed.
+
+---
+
+## edit_audio
+
+Edit audio tracks on video: mix, replace, or pad audio.
+
+**Provider:** `soundside.ai`
+
+### Actions
+
+| Action | What It Does | Key Parameters |
+|--------|-------------|----------------|
+| `mix_audio` | Layer audio over video | `resource_id`, `audio_source`, `video_volume`, `overlay_volume`, `duration_mode`, `audio_delay_sec` |
+| `replace_audio` | Swap audio track | `resource_id`, `audio_source` |
+| `pad_audio` | Pad audio to target duration | `resource_id`, `target_duration`, `audio_position` |
+
+**Example — Mix narration into video:**
+```json
+{
+  "name": "edit_audio",
+  "arguments": {
+    "resource_id": "<video-id>",
+    "action": "mix_audio",
+    "audio_source": "<narration-audio-id>",
+    "video_volume": 0.0,
+    "overlay_volume": 1.0,
+    "duration_mode": "first"
+  }
+}
+```
+
+### Tips
+
 - **mix_audio with `video_volume: 0.0`** effectively replaces the audio track.
 - **`audio_delay_sec`** offsets narration start time — use this when narrations for different clips are mixed sequentially into one composite video file.
-- **`duration_mode`** for mix_audio: `shortest` (default), `longest`, or `first` (video controls length).
-- **`text_start_sec` / `text_end_sec`** gate text overlays to a specific window — without them, text runs for the full video duration.
-- **Ken Burns** converts still images into video with smooth pan/zoom — great for extending scenes. Use `pan_direction: "static"` for a pure zoom-only effect with no lateral movement.
-- **CJK text** (Korean, Chinese, Japanese) is automatically rendered using the Noto Sans CJK font — no extra configuration needed.
+- **`duration_mode`** for mix_audio: `shortest`, `longest`, or `first` (video controls length, recommended).
+
+---
+
+## apply_effect
+
+Apply cinematic effects: Ken Burns pan/zoom, speed ramp, film grain, vignette.
+
+**Provider:** `soundside.ai`
+
+### Actions
+
+| Action | What It Does | Key Parameters |
+|--------|-------------|----------------|
+| `ken_burns` | Pan/zoom on still image→video | `resource_id`, `zoom_start`, `zoom_end`, `pan_direction`, `easing`, `duration_sec`, `ai_enhance` |
+| `speed_ramp` | Gradual speed change | `resource_id`, `speed_start`, `speed_end`, `easing` |
+| `film_grain` | Add film grain texture | `resource_id`, `grain_intensity` (1-100) |
+| `vignette` | Dark edge vignette | `resource_id`, `vignette_angle` |
+
+**Example — Ken Burns on a still image:**
+```json
+{
+  "name": "apply_effect",
+  "arguments": {
+    "resource_id": "<image-id>",
+    "action": "ken_burns",
+    "zoom_start": 1.0,
+    "zoom_end": 1.3,
+    "pan_direction": "documentary",
+    "duration_sec": 8
+  }
+}
+```
+
+### Tips
+
+- **Ken Burns** converts still images into video with smooth pan/zoom — great for extending scenes.
+- Use `pan_direction: "static"` for a pure zoom-only effect with no lateral movement.
+- `ai_enhance: true` enables AI subject tracking + depth-based parallax (uses Modal GPU).
+
+---
+
+## extract_media
+
+Extract content from media: single frame, multiple frames, or audio track.
+
+**Provider:** `soundside.ai`
+
+### Actions
+
+| Action | What It Does | Key Parameters |
+|--------|-------------|----------------|
+| `extract_frame` | Single frame as image | `resource_id`, `timestamp` |
+| `extract_frames` | Multiple frames | `resource_id`, `frame_interval_sec`, `start_sec`, `end_sec` |
+| `extract_audio` | Audio track as file | `resource_id` |
+
+**Example — Extract a frame:**
+```json
+{
+  "name": "extract_media",
+  "arguments": {
+    "resource_id": "<video-id>",
+    "action": "extract_frame",
+    "timestamp": 5.0
+  }
+}
 
 ---
 

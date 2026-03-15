@@ -101,7 +101,7 @@ def main():
 
     # --- Step 5: Add text overlay (timed: visible for first 4s only) ---
     print("\n✏️ Step 5: Adding timed provider overlay...")
-    overlay = client.call("edit_video", {
+    overlay = client.call("compose_media", {
         "resource_id": video_id,
         "action": "add_text",
         "text": "create_video • minimax • image_to_video",
@@ -110,7 +110,6 @@ def main():
         "fontcolor": "white",
         "text_start_sec": 0.5,   # text appears after 0.5s
         "text_end_sec": 4.0,     # text disappears at 4s (not pinned for the whole video)
-        "advanced_options": {"bg_color": "rgba(0,0,0,0.5)"},
     })
     overlay_id = overlay["resource_id"]
     print(f"   Overlay: {overlay_id}")
@@ -129,20 +128,20 @@ def main():
         print(f"   ⚠️  Narration longer than video by {extra-1:.1f}s — extending with Ken Burns...")
 
         # Extract last frame
-        frame = client.call("edit_video", {
+        frame = client.call("extract_media", {
             "resource_id": video_id,
             "action": "extract_frame",
             "timestamp": max(0, vid_dur - 0.5),
         })
 
         # Ken Burns the last frame
-        kb = client.call("edit_video", {
+        kb = client.call("apply_effect", {
             "resource_id": frame["resource_id"],
             "action": "ken_burns",
             "zoom_start": 1.0,
             "zoom_end": 1.05,
             "pan_direction": "center",
-            "advanced_options": {"duration": int(extra + 1)},
+            "duration_sec": int(extra + 1),
         })
 
         # Concat original + extension
@@ -155,7 +154,7 @@ def main():
 
     # --- Step 7: Mix narration ---
     print("\n🔊 Step 7: Mixing narration into video...")
-    narrated = client.call("edit_video", {
+    narrated = client.call("edit_audio", {
         "resource_id": final_video_id,
         "action": "mix_audio",
         "audio_source": narr_id,
@@ -168,7 +167,7 @@ def main():
 
     # --- Step 8: Mix music ---
     print("\n🎶 Step 8: Mixing background music...")
-    final = client.call("edit_video", {
+    final = client.call("edit_audio", {
         "resource_id": narrated_id,
         "action": "mix_audio",
         "audio_source": music_id,
