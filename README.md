@@ -2,7 +2,7 @@
 
 **AI Media Production Platform for Agents**
 
-Soundside exposes 11 MCP tools for generating, editing, and analyzing media — images, video, audio, music, text, and business artifacts. Connect any MCP client. Pay with an API key (credits) or crypto (x402 USDC on Base, no account needed).
+Soundside exposes 15 MCP tools for generating, editing, composing, extracting, and analyzing media — images, video, audio, music, text, and business artifacts. Connect any MCP client. Pay with an API key (credits) or crypto (x402 USDC on Base, no account needed).
 
 ## Quick Start
 
@@ -19,7 +19,7 @@ POST https://mcp.soundside.ai/mcp
 {"jsonrpc":"2.0","id":"1","method":"tools/list","params":{}}
 ```
 
-## Tools (11)
+## Tools (15)
 
 ### Generation
 
@@ -27,7 +27,7 @@ POST https://mcp.soundside.ai/mcp
 |------|-------------|-----------|
 | `create_image` | Text-to-image, character references | Vertex AI, Grok, Runway, MiniMax, Luma |
 | `create_video` | Text-to-video, image-to-video, video extension | Vertex AI (Veo 3.1), Runway, MiniMax, Luma, Grok |
-| `create_audio` | TTS, transcription (STT), voice cloning, sound effects, voice design | MiniMax, Vertex AI, Runway, Creative Freedom |
+| `create_audio` | TTS, deprecated transcribe compatibility shim, voice cloning, sound effects, voice design | MiniMax, Vertex AI, Runway, Creative Freedom |
 | `create_music` | Music from lyrics and style prompts | MiniMax, Creative Freedom |
 | `create_text` | LLM chat completions, structured output | Vertex AI (Gemini), Grok, MiniMax |
 | `create_artifact` | Charts, presentations, documents, diagrams; bundle mode for multi-artifact packages from a single brief | Plotly, PPTX, WeasyPrint, Mermaid, Gamma |
@@ -36,8 +36,12 @@ POST https://mcp.soundside.ai/mcp
 
 | Tool | What It Does |
 |------|-------------|
-| `edit_video` | 21 actions: trim, concat, crossfade, Ken Burns, mix/replace audio, text overlays, color grading, film grain, speed ramp, split screen, and more |
-| `analyze_media` | Technical analysis (ffprobe), AI vision QA (Gemini), quality scoring |
+| `edit_video` | Core video transforms: trim, concat, crossfade, speed, loop, color grade, burn subtitles, custom FFmpeg |
+| `edit_audio` | Mix, replace, or pad audio on existing media |
+| `compose_media` | Add text, overlay media, or build split-screen composites |
+| `apply_effect` | Ken Burns, speed ramp, film grain, vignette |
+| `extract_media` | Extract frames, frame sets, or audio tracks |
+| `analyze_media` | Technical analysis, AI vision QA, transcription, segment detection, and EDL export |
 
 ### Library Management
 
@@ -74,7 +78,7 @@ See [x402 Guide](./guides/x402.md) for full setup.
 
 - **[Getting Started](./guides/getting-started.md)** — First MCP connection in 5 minutes
 - **[x402 Pay-Per-Call](./guides/x402.md)** — Crypto payments, no account needed
-- **[Tool Reference](./guides/tools.md)** — Detailed docs for all 11 tools
+- **[Tool Reference](./guides/tools.md)** — Detailed docs for all 15 tools
 
 ## Examples
 

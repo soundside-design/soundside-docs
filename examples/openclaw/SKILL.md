@@ -1,6 +1,6 @@
 # Soundside — OpenClaw Skill
 
-Connect your OpenClaw agent to Soundside's 11 MCP tools for AI media generation, editing, and analysis.
+Connect your OpenClaw agent to Soundside's 15 MCP tools for AI media generation, editing, composition, extraction, and analysis.
 
 ## Setup
 
@@ -44,9 +44,13 @@ Once connected, your agent has access to:
 - `create_text` — LLM completions with structured output (Vertex Gemini, Grok, MiniMax)
 - `create_artifact` — Charts, presentations, documents, diagrams
 
-### Editing & Analysis (2 tools)
-- `edit_video` — 21 editing actions: trim, concat, Ken Burns, mix audio, text overlays, color grading, film grain, split screen, custom, and more
-- `analyze_media` — Technical analysis + AI vision QA scoring
+### Editing & Analysis (6 tools)
+- `edit_video` — Core video transforms: trim, concat, crossfade, speed, loop, color grading, subtitles, custom FFmpeg
+- `edit_audio` — Mix, replace, or pad audio on existing media
+- `compose_media` — Add text, overlay media, or build split-screen composites
+- `apply_effect` — Ken Burns, speed ramp, film grain, vignette
+- `extract_media` — Extract frames, frame sets, or audio tracks
+- `analyze_media` — Technical analysis, AI vision QA, canonical transcription, segment detection, and EDL export
 
 ### Library (3 tools)
 - `lib_list` — Browse projects, collections, resources; **check resource status** (free)
@@ -93,8 +97,9 @@ The response includes an `items` array. Check `items[0].state` and `items[0].sto
 | `create_image` (vertex, grok, minimax) | No — returns immediately | 3–10s |
 | `create_audio` (TTS) | No — returns immediately | 2–5s |
 | `create_text` | No — returns immediately | 1–5s |
-| `edit_video` | No — returns immediately | 2–15s |
-| `analyze_media` | No — returns immediately | 2–10s |
+| `edit_video` / `edit_audio` / `compose_media` / `apply_effect` / `extract_media` | No — returns immediately | 2–15s |
+| `analyze_media` (`technical`, `vision_qa`, `export_edl`) | No — returns immediately | 2–10s |
+| `analyze_media` (`transcribe`, `detect_segments`) | Mixed — may run as a task on long inputs | 5–120s |
 | `create_artifact` | No — returns immediately | 1–5s |
 
 ### Polling Is Free
@@ -112,8 +117,8 @@ Chain operations by passing `resource_id` from one step to the next. Every resou
 ```
 1. Generate media        →  create_image / create_video / create_audio / create_music
 2. ⏳ Poll if async      →  lib_list(entity_type="resources", resource_id=...)
-3. Chain into editing    →  edit_video(resource_id=..., action="add_text", ...)
-4. Mix audio             →  edit_video(resource_id=..., action="mix_audio", audio_source=...)
+3. Add overlays          →  compose_media(resource_id=..., action="add_text", ...)
+4. Mix audio             →  edit_audio(resource_id=..., action="mix_audio", audio_source=...)
 5. QA analysis           →  analyze_media(resource_id=..., analysis_type="vision_qa")
 6. Organize              →  lib_manage(entity_type="project", operation="create", ...)
 ```
@@ -133,12 +138,56 @@ Chain operations by passing `resource_id` from one step to the next. Every resou
 4. create_audio(provider="minimax", mode="tts", text="In a quiet forest...")
    → narration_id (sync, immediately ready)
 
-5. edit_video(resource_id=video_id, action="mix_audio", audio_source=narration_id)
+5. edit_audio(resource_id=video_id, action="mix_audio", audio_source=narration_id)
    → final_id (sync, immediately ready)
 
 6. analyze_media(resource_id=final_id, analysis_type="vision_qa")
    → QA score and issues
 ```
+
+### Example: Smart Cut / Rough Cut
+
+```
+1. analyze_media(resource_id=source_id, analysis_type="technical")
+   → duration, frame rate, audio presence
+
+2. analyze_media(
+     resource_id=source_id,
+     analysis_type="transcribe",
+     enable_diarization=true,
+     enable_silence_detection=true,
+     subtitle_formats=["srt", "vtt"]
+   )
+   → transcript_resource_id (+ transcript JSON as the primary resource)
+
+3. analyze_media(
+     resource_id=source_id,
+     analysis_type="detect_segments",
+     transcript_resource_id=transcript_resource_id,
+     prompt="keep the pricing discussion and closing Q&A",
+     padding_sec=0.5,
+     merge_gap_sec=2.0
+   )
+   → segments_resource_id with keep ranges
+
+4. Present the keep ranges to the user before cutting.
+
+5. Trim each keep range with edit_video(action="trim"), then assemble with
+   edit_video(action="concat", resource_ids=[...], crossfade_ms=75)
+
+6. analyze_media(
+     resource_id=source_id,
+     analysis_type="export_edl",
+     segments_resource_id=segments_resource_id,
+     title="SOUNDSIDE_CUT"
+   )
+   → edl_resource_id
+
+7. analyze_media(resource_id=rough_cut_id, analysis_type="vision_qa", intent_checklist={...})
+   → verify no abrupt seams, no text timing issues, no audio overlap
+```
+
+Smart Cut is video-first in Phase 1. Audio-only sources support transcript, detected segments, and EDL export, but not assembled rough-cut media.
 
 ---
 
@@ -215,7 +264,7 @@ Every generation returns a `resource_id` that persists across sessions:
 
 1. Generate media → receive `resource_id`
 2. Poll if async → `lib_list(entity_type="resources", resource_id=...)`
-3. Chain into editing: `edit_video(resource_id=..., action="add_text", ...)`
+3. Chain into editing: `compose_media(resource_id=..., action="add_text", ...)`
 4. Organize: `lib_manage(entity_type="project", operation="create", ...)`
 5. Download only for final delivery
 
@@ -249,7 +298,7 @@ This keeps workflow state durable without local storage.
 
 Live pricing: `GET https://mcp.soundside.ai/api/x402/status`
 
-Soundside charges near-cost on provider pass-through (~10% margin). Editing is $0.01/call. Analysis is $0.01 (technical/quality) or $0.03 (vision_qa). A typical video pipeline (image → video → edit → analyze) costs $0.50-3.00 depending on provider.
+Soundside charges near-cost on provider pass-through (~10% margin). Editing and library calls are generally $0.01/call. `analyze_media` is priced by mode: $0.01 for `technical` and `export_edl`, $0.02 for `transcribe` and `detect_segments`, and $0.03 for `vision_qa`. A typical video pipeline (image → video → edit → analyze) costs $0.50-3.00 depending on provider.
 
 ## Docs
 

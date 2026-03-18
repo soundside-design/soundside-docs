@@ -1,6 +1,6 @@
 # Tool Reference
 
-Complete reference for all 11 Soundside MCP tools. Always call `tools/list` at runtime to get the canonical schemas — this document is a human-readable companion.
+Complete reference for all 15 Soundside MCP tools. Always call `tools/list` at runtime to get the canonical schemas — this document is a human-readable companion.
 
 **Live pricing:** `GET https://mcp.soundside.ai/api/x402/status`
 
@@ -115,14 +115,14 @@ All providers are **async** — returns a `resource_id` immediately, completes i
 
 ## create_audio
 
-Create audio content. Supports multiple modes: TTS, sound effects, transcription, voice cloning, voice design, and voice listing.
+Create audio content. Supports multiple modes: TTS, sound effects, voice cloning, voice design, and voice listing.
 
 **Providers:** `minimax`, `vertex`, `runway` (sound effects via ElevenLabs), `creative_freedom` (open-source CosyVoice)
 
 | Parameter | Required | Type | Description |
 |-----------|----------|------|-------------|
 | `provider` | yes | string | AI provider |
-| `mode` | no | string | `tts` (default), `sound_effect`, `transcribe`, `voice_clone`, `voice_design`, `list_voices` |
+| `mode` | no | string | `tts` (default), `sound_effect`, `transcribe` _(deprecated compatibility shim)_, `voice_clone`, `voice_design`, `list_voices` |
 | `prompt` | no | string | Text for TTS speech or sound effect description |
 | `text` | no | string | _(Deprecated — use `prompt`)_ Backward-compatible alias for `prompt` |
 | `voice_id` | no | string | Voice ID (default: `Calm_Woman` for MiniMax, `en-US-Journey-F` for Vertex) |
@@ -160,7 +160,7 @@ Create audio content. Supports multiple modes: TTS, sound effects, transcription
 }
 ```
 
-**Example — Transcription:**
+**Example — Deprecated transcription shim:**
 ```json
 {
   "name": "create_audio",
@@ -172,6 +172,8 @@ Create audio content. Supports multiple modes: TTS, sound effects, transcription
   }
 }
 ```
+
+Use `analyze_media(analysis_type="transcribe")` for the canonical STT surface. `create_audio(mode="transcribe")` remains available for one version cycle and delegates internally to `analyze_media`.
 
 ---
 
@@ -333,7 +335,7 @@ Core video transforms: trim, join, speed, color, loops, subtitles, and custom FF
 | Action | What It Does | Key Parameters |
 |--------|-------------|----------------|
 | `trim` | Extract a time range | `resource_id`, `start_sec`, `duration_sec` |
-| `concat` | Join multiple clips | `resource_ids` (auto-normalizes resolution) |
+| `concat` | Join multiple clips | `resource_ids`, `crossfade_ms` (optional seam smoothing) |
 | `crossfade` | Transition between clips | `resource_ids`, `duration_sec`, `transition` |
 | `adjust_speed` | Speed up/slow down | `resource_id`, `factor`, `smooth` (AI frame interp) |
 | `loop` | Loop media to target duration | `resource_id`, `target_duration` |
@@ -506,25 +508,48 @@ Extract content from media: single frame, multiple frames, or audio track.
     "timestamp": 5.0
   }
 }
+```
 
 ---
 
 ## analyze_media
 
-Analyze media for technical properties, quality metrics, or AI-powered evaluation.
+Analyze media for technical properties, reusable transcript artifacts, rough-cut segment selection, EDL export, or AI-powered evaluation.
 
 **Analysis types:**
 - `technical` (default) — Duration, resolution, codecs, bitrate via ffprobe
-- `quality` — Quality metrics
 - `vision_qa` — AI evaluation using **Gemini 2.5 Pro** (for video) or Gemini 2.5 Flash (images). Scores prompt adherence, motion quality, temporal coherence, plus audio content analysis (narration overlap, audio artifacts, what's heard)
+- `transcribe` — Canonical STT surface. Persists transcript JSON plus optional SRT/VTT sidecars
+- `detect_segments` — Transcript-guided keep-range detection for rough cuts
+- `export_edl` — Export persisted or inline keep-ranges as a CMX 3600 EDL
 
 | Parameter | Required | Type | Description |
 |-----------|----------|------|-------------|
 | `resource_id` | yes | string | Resource ID or URL to analyze |
-| `analysis_type` | no | string | `technical`, `quality`, `vision_qa` (default: `technical`) |
+| `analysis_type` | no | string | `technical`, `vision_qa`, `transcribe`, `detect_segments`, `export_edl` (default: `technical`) |
 | `reference_prompt` | no | string | Original prompt for vision_qa scoring |
 | `criteria` | no | string[] | Evaluation criteria: `style_consistency`, `prompt_match`, `artifacts`, `audio_quality`, `composition` |
 | `intent_checklist` | no | object | Production spec checklist (vision_qa video only). See below. |
+| `language_code` | no | string | Transcription language (currently `en-US` only) |
+| `enable_diarization` | no | boolean | Add speaker labels to transcription output |
+| `enable_silence_detection` | no | boolean | Insert silence markers into transcript segments |
+| `silence_threshold_sec` | no | number | Minimum silence gap to mark |
+| `include_word_timestamps` | no | boolean | Include per-word timings in transcript output |
+| `subtitle_formats` | no | string[] | Subtitle sidecars to persist for transcription output (`srt`, `vtt`) |
+| `prompt` | no | string | Natural-language criteria for `detect_segments` |
+| `transcript_resource_id` | no | string | Reuse a previously persisted transcript for `detect_segments` |
+| `mode` | no | string | `keep` or `remove` for `detect_segments` |
+| `min_segment_sec` | no | number | Minimum returned keep-range duration |
+| `padding_sec` | no | number | Breathing room added around cut points |
+| `merge_gap_sec` | no | number | Merge neighboring ranges within this gap |
+| `max_segments` | no | integer | Cap the number of returned keep-ranges |
+| `segments_resource_id` | no | string | Preferred segment list input for `export_edl` |
+| `segments` | no | object[] | Inline segment fallback for `export_edl` |
+| `title` | no | string | EDL title header |
+| `format` | no | string | `cmx3600` |
+| `reel_name` | no | string | Reel identifier for CMX 3600 |
+| `frame_rate` | no | number | Override source fps during EDL export |
+| `include_audio` | no | boolean | Include audio tracks in EDL output when source audio exists |
 
 **`intent_checklist` keys** (all optional):
 - `text_overlays` — `[{"text": "Seoul, 1987", "start_sec": 1, "end_sec": 6}]` — verify text appears only in its window
@@ -544,6 +569,50 @@ Analyze media for technical properties, quality metrics, or AI-powered evaluatio
 ```
 
 Returns: duration, resolution, codecs, bitrate, frame rate, audio channels, etc.
+
+**Example — Transcribe (canonical STT):**
+```json
+{
+  "name": "analyze_media",
+  "arguments": {
+    "resource_id": "<resource-id>",
+    "analysis_type": "transcribe",
+    "enable_diarization": true,
+    "enable_silence_detection": true,
+    "subtitle_formats": ["srt", "vtt"]
+  }
+}
+```
+
+Returns a primary `resource_id` for the transcript JSON resource plus `metadata.text`, `metadata.segments`, `metadata.srt_resource_id`, and `metadata.vtt_resource_id`.
+
+**Example — Detect rough-cut keep ranges:**
+```json
+{
+  "name": "analyze_media",
+  "arguments": {
+    "resource_id": "<resource-id>",
+    "analysis_type": "detect_segments",
+    "transcript_resource_id": "<transcript-resource-id>",
+    "prompt": "keep the pricing discussion and the closing Q&A",
+    "padding_sec": 0.5,
+    "merge_gap_sec": 2.0
+  }
+}
+```
+
+**Example — Export CMX 3600 EDL:**
+```json
+{
+  "name": "analyze_media",
+  "arguments": {
+    "resource_id": "<resource-id>",
+    "analysis_type": "export_edl",
+    "segments_resource_id": "<segment-resource-id>",
+    "title": "SOUNDSIDE_CUT"
+  }
+}
+```
 
 **Example — Vision QA (generic):**
 ```json
@@ -577,7 +646,7 @@ Returns: duration, resolution, codecs, bitrate, frame rate, audio channels, etc.
 
 **Returns (vision_qa):** `score` (0–1), `passed` (bool), `issues` (array), `suggestions` (array), `checklist_results` (object, if checklist provided), `audio_summary` (string).
 
-> **Pricing:** `technical`/`quality` = 1 credit. `vision_qa` = 3 credits (Gemini 2.5 Pro inference cost).
+> **Pricing:** `technical` = 1 credit, `vision_qa` = 3 credits, `transcribe` = 2 credits, `detect_segments` = 2 credits, `export_edl` = 1 credit.
 
 **See also:** [vision\_qa\_example.py](../examples/python/vision_qa_example.py) — dedicated example covering generic QA, spec-driven checklists, and reading audio summaries.
 
