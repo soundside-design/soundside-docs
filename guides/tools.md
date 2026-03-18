@@ -125,7 +125,7 @@ Create audio content. Supports multiple modes: TTS, sound effects, voice cloning
 | `mode` | no | string | `tts` (default), `sound_effect`, `transcribe` _(deprecated compatibility shim)_, `voice_clone`, `voice_design`, `list_voices` |
 | `prompt` | no | string | Text for TTS speech or sound effect description |
 | `text` | no | string | _(Deprecated — use `prompt`)_ Backward-compatible alias for `prompt` |
-| `voice_id` | no | string | Voice ID (default: `Calm_Woman` for MiniMax, `en-US-Journey-F` for Vertex) |
+| `voice_id` | no | string | Voice ID (default: `Calm_Woman` for MiniMax, `en-US-Chirp3-HD-Aoede` for Vertex) |
 | `source` | no | string | Resource ID or URL of audio/video to transcribe |
 | `language_code` | no | string | Language for transcription (default: `en-US`, v1 supports EN-US only) |
 | `include_word_timestamps` | no | boolean | Per-word timestamps in transcription (default: true) |
