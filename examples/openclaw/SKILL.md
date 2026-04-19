@@ -1,6 +1,6 @@
 # Soundside — OpenClaw Skill
 
-Connect your OpenClaw agent to Soundside's 15 MCP tools for AI media generation, editing, composition, extraction, and analysis.
+Connect your OpenClaw agent to Soundside's 19 MCP tools for AI media generation, editing, composition, extraction, analysis, server-side composition, and LoRA adapter training.
 
 ## Setup
 
@@ -39,8 +39,8 @@ Once connected, your agent has access to:
 ### Generation (6 tools)
 - `create_image` — Text-to-image across 5 providers (Vertex AI, Grok, Runway, MiniMax, Luma)
 - `create_video` — Text/image-to-video across 5 providers (Vertex Veo 3.1, Runway, MiniMax, Luma, Grok)
-- `create_audio` — TTS, transcription, voice cloning, sound effects (MiniMax, Vertex AI, Runway, Creative Freedom)
-- `create_music` — Music from lyrics + style prompt (MiniMax, Creative Freedom)
+- `create_audio` — TTS, voice cloning, sound effects (MiniMax, Runway, Vertex AI). Creative Freedom is API-key-only.
+- `create_music` — Music from lyrics + style prompt (MiniMax). Creative Freedom is API-key-only.
 - `create_text` — LLM completions with structured output (Vertex Gemini, Grok, MiniMax)
 - `create_artifact` — Charts, presentations, documents, diagrams
 

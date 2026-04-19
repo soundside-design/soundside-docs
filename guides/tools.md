@@ -1,8 +1,16 @@
 # Tool Reference
 
-Complete reference for all 15 Soundside MCP tools. Always call `tools/list` at runtime to get the canonical schemas — this document is a human-readable companion.
+Complete reference for all 19 Soundside MCP tools. Always call `tools/list` at runtime to get the canonical schemas — this document is a human-readable companion.
 
 **Live pricing:** `GET https://mcp.soundside.ai/api/x402/status`
+
+**Tool surface:**
+- Generation (6): `create_image`, `create_video`, `create_audio`, `create_music`, `create_text`, `create_artifact`
+- Composition (1): `compose_video`
+- Editing (5): `edit_video`, `edit_audio`, `compose_media`, `apply_effect`, `extract_media`
+- Analysis (1): `analyze_media`
+- Adapters (3): `train_adapter`, `list_adapters`, `manage_adapter`
+- Library (3): `lib_list`, `lib_manage`, `lib_share`
 
 ---
 
@@ -10,7 +18,7 @@ Complete reference for all 15 Soundside MCP tools. Always call `tools/list` at r
 
 Generate images from text prompts. Supports character references for consistent characters across generations.
 
-**Providers:** `vertex` (Gemini), `grok`, `runway`, `minimax`, `luma`
+**Providers:** `alibaba` (Wan), `grok`, `luma`, `minimax`, `runway`, `vertex` (Gemini)
 
 | Parameter | Required | Type | Description |
 |-----------|----------|------|-------------|
@@ -52,7 +60,7 @@ Generate images from text prompts. Supports character references for consistent 
 
 Generate video from text prompt or image. Supports text-to-video, image-to-video (via `first_frame`), video extension, and character references.
 
-**Providers:** `vertex` (Veo 3.1), `runway`, `minimax` (Hailuo), `luma` (Ray-2), `grok`
+**Providers:** `alibaba` (Wan), `grok`, `luma` (Ray-2), `minimax` (Hailuo), `runway`, `vertex` (Veo 3.1)
 
 All providers are **async** — returns a `resource_id` immediately, completes in background.
 
@@ -117,7 +125,8 @@ All providers are **async** — returns a `resource_id` immediately, completes i
 
 Create audio content. Supports multiple modes: TTS, sound effects, voice cloning, voice design, and voice listing.
 
-**Providers:** `minimax`, `vertex`, `runway` (sound effects via ElevenLabs), `creative_freedom` (open-source CosyVoice)
+**Providers (x402 + API key):** `minimax`, `runway` (sound effects), `vertex`.
+**Additionally via API key only:** `creative_freedom` (self-hosted CosyVoice on Modal).
 
 | Parameter | Required | Type | Description |
 |-----------|----------|------|-------------|
@@ -516,9 +525,11 @@ Extract content from media: single frame, multiple frames, or audio track.
 
 Analyze media for technical properties, reusable transcript artifacts, rough-cut segment selection, EDL export, or AI-powered evaluation.
 
+**Providers (vision_qa):** `anthropic` (Claude), `grok`, `openai` (GPT-4o), `qwen` (omnimodal), `vertex` (Gemini — default). Technical + ffprobe routes via `soundside.ai`.
+
 **Analysis types:**
 - `technical` (default) — Duration, resolution, codecs, bitrate via ffprobe
-- `vision_qa` — AI evaluation using **Gemini 2.5 Pro** (for video) or Gemini 2.5 Flash (images). Scores prompt adherence, motion quality, temporal coherence, plus audio content analysis (narration overlap, audio artifacts, what's heard)
+- `vision_qa` — AI evaluation. Default provider `vertex` uses **Gemini 2.5 Pro** (for video) or Gemini 2.5 Flash (images). Scores prompt adherence, motion quality, temporal coherence, plus audio content analysis (narration overlap, audio artifacts, what's heard)
 - `transcribe` — Canonical STT surface. Persists transcript JSON plus optional SRT/VTT sidecars
 - `detect_segments` — Transcript-guided keep-range detection for rough cuts
 - `export_edl` — Export persisted or inline keep-ranges as a CMX 3600 EDL
@@ -782,3 +793,81 @@ Share projects with other users. **Manages access permissions only — does not 
 | `user_email` | no | string | Email to share with (for `share`) |
 | `permission_level` | no | string | `view`, `edit`, `admin` |
 | `user_id_to_revoke` | no | string | User ID (for `revoke`) |
+
+---
+
+## compose_video
+
+Server-side video composition pipeline. Accepts a composition plan (sparse brief or detailed timeline), enriches it via Gemini, generates assets in parallel across providers, and assembles via FFmpeg with crossfades, audio ducking, and text overlays. **Use this when you want a finished video from a script; use `create_video` + `edit_video` when you need manual control.**
+
+| Parameter | Required | Type | Description |
+|-----------|----------|------|-------------|
+| `plan` | yes | object | Composition plan (brief + segments, or detailed timeline). See spec. |
+| `project_id` | no | string | Library project UUID. If omitted, a project is auto-created. |
+| `collection_id` | no | string | Library collection UUID. |
+| `advanced_options` | no | object | Pipeline-level overrides (visual/narration provider defaults, QA thresholds, etc.). |
+
+**Pricing:** flat per call (see `/api/x402/status` — each generated asset bills individually through the underlying tools). Long videos trigger many paid sub-calls.
+
+**Example — brief + narration:**
+```json
+{
+  "name": "compose_video",
+  "arguments": {
+    "plan": {
+      "brief": "A 30-second explainer about how bees pollinate flowers, warm naturalistic style, a kind narrator voice",
+      "duration_sec": 30
+    }
+  }
+}
+```
+
+---
+
+## train_adapter
+
+Train a LoRA adapter (character or style) from library media.
+
+**Backends:**
+- `dashscope` — Alibaba Wan LoRAs (wan2.1-t2v, wan2.2-t2v, etc.) — hosted training, fastest turnaround.
+- `modal` — Self-hosted fine-tunes (HunyuanVideo, LTX-Video, Wan on Modal, HF repos).
+
+| Parameter | Required | Type | Description |
+|-----------|----------|------|-------------|
+| `name` | yes | string | Adapter display name |
+| `base_model` | yes | string | Base model identifier (provider-specific) |
+| `training_data` | yes | array | Each item: `{ first_frame_resource_id, video_resource_id, caption }`. `kf2v` also needs `last_frame_resource_id`. |
+| `backend` | no | string | `dashscope` (default) or `modal` |
+| `epochs` | no | number | Training epochs (defaults vary by backend) |
+| `advanced_options` | no | object | Backend-specific knobs |
+
+**Async.** Returns a pending resource_id; poll via `list_adapters` or `manage_adapter(operation="inspect")`.
+
+---
+
+## list_adapters
+
+List LoRA adapters mirrored into the Soundside library.
+
+| Parameter | Required | Type | Description |
+|-----------|----------|------|-------------|
+| `status_filter` | no | string | `training`, `ready`, `deployed`, `failed` |
+| `backend_filter` | no | string | `dashscope`, `modal` |
+
+Free tool — no credits deducted.
+
+---
+
+## manage_adapter
+
+Manage an adapter's lifecycle: inspect, deploy, undeploy, delete, or select a specific checkpoint.
+
+| Parameter | Required | Type | Description |
+|-----------|----------|------|-------------|
+| `adapter_id` | yes | string | Adapter resource UUID |
+| `operation` | yes | string | `inspect`, `deploy`, `undeploy`, `delete`, `select_checkpoint` |
+| `checkpoint` | no | number/string | Checkpoint index or name (for `select_checkpoint`) |
+
+Free tool — underlying provider operations may incur provider-side costs (e.g. DashScope deploy fee at first use).
+
+**Inference usage:** once deployed, pass the adapter's `lora_id` (or resource_id) via `advanced_options.adapters: [{ id, weight }]` to `create_image` or `create_video`.

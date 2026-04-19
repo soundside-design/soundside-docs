@@ -33,19 +33,33 @@ print(result.text)
 
 ## What you can do
 
+Soundside exposes 19 MCP tools. The SDK has typed wrappers for the most common ones and a generic `call_tool()` for everything else.
+
+### Typed wrappers
+
 | Method | What it does | Sync/Async |
 |--------|-------------|------------|
 | `create_image()` | Generate images from text | Sync |
 | `create_video()` | Generate video clips | Async (auto-waits) |
-| `create_audio()` | TTS, sound effects, transcription | Varies |
+| `create_audio()` | TTS, sound effects, voice cloning, voice design | Varies |
 | `create_music()` | Generate music tracks | Async (auto-waits) |
 | `create_text()` | LLM text generation | Sync |
-| `create_artifact()` | Presentations, charts, docs | Sync |
-| `edit_video()` | 21 editing actions (text, trim, concat...) | Sync |
-| `analyze_media()` | Metadata + AI quality analysis | Sync |
+| `create_artifact()` | Presentations, charts, documents, diagrams | Sync |
+| `edit_video()` | Video edits (trim, concat, crossfade, color_grade, ...) | Sync |
+| `analyze_media()` | Metadata + AI quality analysis + transcription | Sync |
 | `lib_list()` | Browse your library (free) | Sync |
 | `lib_manage()` | Create/update/delete projects & collections | Sync |
-| `call_tool()` | Call any MCP tool by name | Varies |
+
+### Generic dispatch (everything else)
+
+Use `client.call_tool(name, arguments)` for any tool without a typed wrapper:
+
+- `compose_media`, `edit_audio`, `apply_effect`, `extract_media` — editing composition tools
+- `compose_video` — server-side video composition pipeline
+- `lib_share` — share a project with other users
+- `train_adapter`, `list_adapters`, `manage_adapter` — LoRA adapter lifecycle
+
+See `soundside-docs/guides/tools.md` for the full reference.
 
 ## Async video generation
 
