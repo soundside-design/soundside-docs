@@ -204,17 +204,24 @@ def main() -> None:
         print("  x402_session_token: present (use for /api/x402/resource polling)")
     print()
 
-    # --- Example 3: Share generated project with a collaborator ---
-    # After any successful x402 call, a project is automatically created
-    # for your wallet. You can share it:
+    # --- Example 3: Share the auto-created x402 project ---
+    # Every wallet gets a single auto-project on its first x402 call; tool
+    # responses don't echo the project_id back, so we look it up with
+    # lib_list first, then share.
     print("Sharing x402 project with a collaborator...")
-    share_result = client.call_tool("lib_share", {
-        "operation": "share",
-        "project_id": result.get("project_id", "<your-x402-project-id>"),
-        "user_email": "collaborator@example.com",
-        "permission_level": "view",
-    })
-    print(f"  Share result: {share_result.get('message')}")
+    projects_result = client.call_tool("lib_list", {"entity_type": "projects", "limit": 10})
+    projects = projects_result.get("projects") or projects_result.get("items") or []
+    if not projects:
+        print("  ⚠️  No projects found for this wallet — skipping share demo.")
+    else:
+        project_id = projects[0].get("id") or projects[0].get("project_id")
+        share_result = client.call_tool("lib_share", {
+            "operation": "share",
+            "project_id": project_id,
+            "user_email": "collaborator@example.com",
+            "permission_level": "view",
+        })
+        print(f"  Share result: {share_result.get('message')}")
 
     print("\nDone. Check https://mcp.soundside.ai/api/x402/status for current pricing.")
 

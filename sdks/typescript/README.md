@@ -19,13 +19,13 @@ const client = new Soundside({ apiKey: "mcp_your_key_here" });
 
 // Generate an image (~4 credits / $0.04)
 const image = await client.createImage("A sunset over the ocean, cinematic lighting");
-console.log(image.storageUrl);
+console.log(image.url);
 
 // Generate a video (async — waits automatically, ~20-80 credits)
 const video = await client.createVideo("Waves crashing on a rocky coastline", {
   provider: "minimax",
 });
-console.log(video.storageUrl);
+console.log(video.url);
 
 // Generate text
 const result = await client.createText("Write a haiku about the ocean");
@@ -75,7 +75,7 @@ console.log(`Started: ${resource.resourceId}`);
 const completed = await client.waitForResource(resource.resourceId, {
   timeout: 600_000,
 });
-console.log(completed.storageUrl);
+console.log(completed.url);
 ```
 
 ## Image-to-video pipeline
@@ -88,7 +88,7 @@ const video = await client.createVideo("The fox looks around curiously", {
   firstFrame: image.resourceId,
   provider: "minimax",
 });
-console.log(video.storageUrl);
+console.log(video.url);
 ```
 
 ## Low-level access

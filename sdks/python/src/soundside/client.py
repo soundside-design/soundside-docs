@@ -26,7 +26,7 @@ class Soundside:
 
         client = Soundside(api_key="mcp_your_key")
         image = client.create_image("A sunset over the ocean")
-        print(image.storage_url)
+        print(image.url)
     """
 
     def __init__(
@@ -167,13 +167,15 @@ class Soundside:
             })
             items = result.data.get("items", [])
             item = items[0] if items else result.data
-            state = item.get("state") or item.get("status", "")
+            status = item.get("status") or item.get("state", "")
 
-            if state in ("failed", "error"):
+            if status in ("failed", "error"):
                 raise SoundsideError(
                     f"Resource {resource_id} failed: {item.get('failure_reason', 'unknown')}"
                 )
-            if state == "completed" and item.get("storage_url"):
+            # Signed asset URL lands on the item as ``url`` once the backend
+            # finalizes the resource; older responses used ``storage_url``.
+            if status == "completed" and (item.get("url") or item.get("storage_url")):
                 return Resource.from_dict(item)
 
             time.sleep(poll_interval)
@@ -181,7 +183,7 @@ class Soundside:
         raise TimeoutError(f"Resource {resource_id} did not complete in {timeout}s")
 
     def get_resource(self, resource_id: str) -> Resource:
-        """Fetch a resource's full details (including storage URL) via lib_list. Free."""
+        """Fetch a resource's full details (including signed URL) via lib_list. Free."""
         result = self.call_tool("lib_list", {
             "entity_type": "resources",
             "resource_id": resource_id,
@@ -192,8 +194,8 @@ class Soundside:
         return Resource.from_dict(items[0])
 
     def _ensure_url(self, resource: Resource) -> Resource:
-        """If storage_url is missing, fetch it via lib_list."""
-        if resource.storage_url:
+        """Re-fetch if the signed URL is missing (e.g. sync response didn't carry it)."""
+        if resource.url:
             return resource
         return self.get_resource(resource.resource_id)
 
@@ -236,7 +238,7 @@ class Soundside:
         res = result.resource
         if res is None:
             raise SoundsideError(f"No resource_id in response: {result.data}")
-        if wait and res.state != "completed":
+        if wait and res.status != "completed":
             return self.wait_for_resource(res.resource_id, timeout=wait_timeout)
         return res
 
@@ -278,7 +280,7 @@ class Soundside:
         res = result.resource
         if res is None:
             raise SoundsideError(f"No resource_id in response: {result.data}")
-        if wait and res.state != "completed":
+        if wait and res.status != "completed":
             return self.wait_for_resource(res.resource_id, timeout=wait_timeout)
         return res
 

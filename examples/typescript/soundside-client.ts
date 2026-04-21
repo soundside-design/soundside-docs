@@ -27,8 +27,12 @@ interface MCPResult {
 interface ResourceItem {
   id?: string;
   resource_id?: string;
-  state?: string;
   status?: string;
+  /** Legacy alias for status (older responses). */
+  state?: string;
+  /** Signed GCS URL (canonical). */
+  url?: string;
+  /** Legacy alias for url. */
   storage_url?: string;
   failure_reason?: string;
   [key: string]: unknown;
@@ -210,11 +214,13 @@ class SoundsideClient {
    * Poll until an async resource completes.
    *
    * Checks lib_list every `pollIntervalMs` until:
-   * - state="completed" AND storage_url is present → returns the resource
-   * - state="failed" or "error" → throws Error
+   * - status="completed" AND url is present → returns the resource
+   * - status="failed" or "error" → throws Error
    * - timeout exceeded → throws Error
    *
-   * lib_list calls are free (zero credits).
+   * lib_list calls are free (zero credits). The signed GCS asset URL
+   * arrives on the item as ``url``; older responses used ``storage_url``.
+   * Both are accepted.
    */
   async waitForResource(
     resourceId: string,
@@ -230,15 +236,15 @@ class SoundsideClient {
 
       const items = (result.items ?? []) as ResourceItem[];
       const item: ResourceItem = items[0] ?? (result as ResourceItem);
-      const state = item.state ?? item.status ?? "";
+      const status = item.status ?? item.state ?? "";
 
-      if (state === "failed" || state === "error") {
+      if (status === "failed" || status === "error") {
         throw new Error(
           `Resource ${resourceId} failed: ${item.failure_reason ?? "unknown"}`
         );
       }
 
-      if (state === "completed" && item.storage_url) {
+      if (status === "completed" && (item.url || item.storage_url)) {
         return item;
       }
 
@@ -271,8 +277,9 @@ class SoundsideClient {
       return result;
     }
 
-    const state = (result.state as string) ?? "";
-    if (state === "completed" && result.storage_url) {
+    const status = (result.status as string) ?? (result.state as string) ?? "";
+    const assetUrl = (result.url as string) ?? (result.storage_url as string);
+    if (status === "completed" && assetUrl) {
       // Already complete
       return result;
     }
@@ -317,10 +324,9 @@ async function main() {
   const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
   console.log(`  Resource ID: ${imageResult.resource_id ?? "N/A"}`);
   console.log(`  Time: ${elapsed}s`);
-  if (imageResult.storage_url) {
-    console.log(
-      `  URL: ${String(imageResult.storage_url).slice(0, 80)}...`
-    );
+  const imageUrl = (imageResult.url ?? imageResult.storage_url) as string | undefined;
+  if (imageUrl) {
+    console.log(`  URL: ${imageUrl.slice(0, 80)}...`);
   }
 
   // 4. Analyze it
@@ -365,8 +371,9 @@ async function main() {
       const velapsed = ((Date.now() - vt0) / 1000).toFixed(1);
       console.log(`  ✅ Video complete in ${velapsed}s`);
       console.log(`  Resource ID: ${video.id ?? video.resource_id ?? "N/A"}`);
-      if (video.storage_url) {
-        console.log(`  URL: ${String(video.storage_url).slice(0, 80)}...`);
+      const videoUrl = (video.url ?? video.storage_url) as string | undefined;
+      if (videoUrl) {
+        console.log(`  URL: ${videoUrl.slice(0, 80)}...`);
       }
     } catch (err) {
       console.log(`  ⚠️  Video generation failed: ${err}`);

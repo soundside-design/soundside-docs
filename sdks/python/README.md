@@ -17,14 +17,14 @@ client = Soundside(api_key="mcp_your_key_here")
 
 # Generate an image (~4 credits / $0.04)
 image = client.create_image("A sunset over the ocean, cinematic lighting")
-print(image.storage_url)
+print(image.url)
 
 # Generate a video (async — waits automatically, ~20-80 credits)
 video = client.create_video(
     "Waves crashing on a rocky coastline",
     provider="minimax",
 )
-print(video.storage_url)
+print(video.url)
 
 # Generate text
 result = client.create_text("Write a haiku about the ocean")
@@ -72,7 +72,7 @@ print(f"Started: {resource.resource_id}")
 # ... do other work ...
 
 completed = client.wait_for_resource(resource.resource_id, timeout=600)
-print(completed.storage_url)
+print(completed.url)
 ```
 
 ## Image-to-video pipeline
@@ -84,7 +84,7 @@ video = client.create_video(
     first_frame=image.resource_id,
     provider="minimax",
 )
-print(video.storage_url)
+print(video.url)
 ```
 
 ## Low-level access

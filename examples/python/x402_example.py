@@ -155,13 +155,22 @@ class SoundsideX402Client:
                     raise RuntimeError(f"Tool error ({tool}): {ct['text']}")
             raise RuntimeError(f"Tool error ({tool}): unknown error")
 
+        # Merge structuredContent + the first text block. structuredContent
+        # carries the canonical fields (url, wallet_link, x402_session_token,
+        # resource_id, status). The text block is usually a JSON
+        # superset/subset of the same; merging keeps the caller happy even
+        # when the two drift.
+        structured = result.get("structuredContent") or {}
+        text_data: dict = {}
         for content in result.get("content", []):
             if content.get("type") == "text":
                 try:
-                    return json.loads(content["text"])
+                    text_data = json.loads(content["text"])
                 except json.JSONDecodeError:
-                    return {"text": content["text"]}
-        return rpc
+                    text_data = {"text": content["text"]}
+                break
+        merged = {**text_data, **structured}
+        return merged or rpc
 
 
 async def main():
@@ -206,8 +215,9 @@ async def main():
         "prompt": "A fox in a cyberpunk city, neon lights reflecting in rain puddles",
     }, timeout=120)
     print(f"  ✅ Resource ID: {img_result.get('resource_id', 'N/A')}")
-    if img_result.get("storage_url"):
-        print(f"  📥 URL: {img_result['storage_url'][:80]}...")
+    asset_url = img_result.get("url") or img_result.get("storage_url")
+    if asset_url:
+        print(f"  📥 URL: {asset_url[:80]}...")
     if img_result.get("wallet_link"):
         print(f"  🔗 Browser access: {img_result['wallet_link'][:60]}...")
     if img_result.get("x402_session_token"):

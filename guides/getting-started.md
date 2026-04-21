@@ -53,7 +53,7 @@ Returns all available tools with their full input schemas. Always read schemas f
 }}
 ```
 
-Returns a `resource_id` and `storage_url` (signed GCS URL to download).
+Returns a `resource_id`. The signed GCS asset URL arrives on the **item fetched via `lib_list`** — use `lib_list(entity_type="resources", resource_id=<id>)` and read `items[0].url`. Older backend versions used the field name `storage_url`; `url` is the canonical name today.
 
 ### Generate a Video (Async)
 
@@ -120,20 +120,22 @@ Each generation tool supports multiple AI providers. If you don't specify one, S
 | Use Case | Recommended Provider | Why |
 |----------|---------------------|-----|
 | Highest quality video | `vertex` (Veo 3.1) | Best motion, longest clips |
+| Open-weights video with tight controls | `alibaba` (Wan) | 13 operations incl. VACE, i2v, kf2v, animate |
 | Best value video | `minimax` (Hailuo) | Good quality, lowest cost |
 | Fast image generation | `vertex` or `grok` | Sync, sub-10s |
-| Cheapest images | `luma` or `minimax` | $0.02-0.04 |
+| Cheapest images | `luma` ($0.02) / `alibaba` ($0.05) / `minimax` ($0.04) | |
 | Text-to-speech | `minimax` | Multiple voices, voice cloning |
 | Transcription (STT) | `vertex` | EN-US, word-level timestamps |
-| Music generation | `minimax` | Only provider, lyrics + style prompt |
+| Music generation | `minimax` | Only public provider (Creative Freedom is API-key-only) |
 | LLM text | `vertex` (Gemini) | General purpose |
+| Vision QA over video | `vertex` (Gemini 2.5 Pro, default) or `qwen` | Also: `anthropic`, `grok`, `openai` |
 
 ## 6. Sync vs Async
 
 | Behavior | Tools |
 |----------|-------|
-| **Sync** — result in response | `create_image` (most providers), `create_text`, `create_audio` (vertex TTS), `create_artifact`, `edit_video`, `compose_media`, `edit_audio`, `apply_effect`, `extract_media`, `analyze_media`, `lib_*` |
-| **Async** — returns `resource_id`, completes later | `create_video` (all providers), `create_music`, `create_image` (luma, runway), `create_audio` (minimax TTS, runway sound_effect) |
+| **Sync** — result in response | `create_image` (alibaba, grok, minimax, vertex), `create_text`, `create_audio` (vertex, runway), `create_artifact`, `edit_video`, `compose_media`, `edit_audio`, `apply_effect`, `extract_media`, `analyze_media` (technical/vision_qa/export_edl), `list_adapters`, `manage_adapter`, `lib_*` |
+| **Async** — returns `resource_id`, completes later | `create_video` (all providers), `create_music`, `compose_video`, `create_image` (luma, runway), `create_audio` (minimax TTS, minimax sound_effect), `analyze_media` (transcribe/detect_segments on long inputs), `train_adapter` |
 
 For async tools, listen for MCP `notifications/resources/updated`, poll with `lib_list`, or use MCP tasks (see below).
 
@@ -150,14 +152,16 @@ Most clients (Claude, OpenClaw, etc.) handle tasks automatically. For raw HTTP u
 
 ## 8. Tool Result Format
 
-Tool results use MCP's `structuredContent` (preferred) plus optional content blocks:
+Tool results use MCP's `structuredContent` (preferred) plus a text content block. Async tools that declare MCP `taskSupport` additionally emit a `resource_link` block so task-aware clients can render a download/preview inline.
 
 ```json
 {
   "structuredContent": {
     "resource_id": "abc-123",
-    "state": "pending",
-    "provider": "minimax"
+    "status": "pending",
+    "provider": "minimax",
+    "wallet_link": "https://www.soundside.ai/auth/wallet-link?token=...",
+    "x402_session_token": "eyJ..."
   },
   "content": [
     {"type": "text", "text": "Video generation started."},
@@ -166,7 +170,9 @@ Tool results use MCP's `structuredContent` (preferred) plus optional content blo
 }
 ```
 
-The `resource_link` block enables MCP clients to render download buttons, previews, or inline embeds.
+- The canonical lifecycle field is **`status`** (`pending` / `completed` / `failed`). Older responses used `state`; both are still returned on some code paths.
+- For completed resources that carry an asset, the signed URL lives on `structuredContent.url` — or on the `lib_list` item if the tool didn't include it inline.
+- The `resource_link` block enables MCP clients to render download buttons, previews, or inline embeds.
 
 ## 9. Library Organization
 

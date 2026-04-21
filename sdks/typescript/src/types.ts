@@ -1,11 +1,24 @@
-/** A generated or managed resource in Soundside. */
+/** A generated or managed resource in Soundside.
+ *
+ * The signed GCS asset URL is exposed as ``url``. ``storageUrl`` is
+ * kept as an alias (same value) so older code keeps compiling.
+ * A missing ``url`` means the resource is still pending — poll with
+ * ``waitForResource`` or ``lib_list`` until it populates.
+ */
 export interface Resource {
   resourceId: string;
+  /** Canonical lifecycle state: "pending" | "completed" | "failed" | ... */
+  status: string;
+  /** Legacy alias for ``status``; same value. */
   state: string;
+  /** Signed GCS URL for the generated asset. */
+  url?: string;
+  /** Legacy alias for ``url``; same value. */
   storageUrl?: string;
   durationMs?: number;
   provider?: string;
   mimeType?: string;
+  thumbnailUrl?: string;
   metadata: Record<string, unknown>;
 }
 

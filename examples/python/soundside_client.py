@@ -164,11 +164,13 @@ class SoundsideClient:
         """Poll until an async resource completes.
 
         Checks lib_list every `poll_interval` seconds until:
-        - state="completed" AND storage_url is present → returns the resource dict
-        - state="failed" or "error" → raises RuntimeError
+        - status="completed" AND url is present → returns the resource dict
+        - status="failed" or "error" → raises RuntimeError
         - timeout exceeded → raises TimeoutError
 
-        lib_list calls are free (zero credits).
+        lib_list calls are free (zero credits). The signed GCS asset URL
+        arrives on the item as ``url`` (older responses used ``storage_url``
+        — both are accepted).
 
         Args:
             resource_id: UUID of the resource to wait for.
@@ -176,7 +178,7 @@ class SoundsideClient:
             poll_interval: Seconds between polls (default 5).
 
         Returns:
-            The resource dict from lib_list (includes storage_url, state, metadata).
+            The resource dict from lib_list (includes url, status, metadata).
         """
         start = time.time()
         while time.time() - start < timeout:
@@ -186,14 +188,13 @@ class SoundsideClient:
             })
             # lib_list wraps results: {success, status, items: [...]}
             item = result.get("items", [{}])[0] if result.get("items") else result
-            state = item.get("state") or item.get("status", "")
+            status = item.get("status") or item.get("state", "")
 
-            if state in ("failed", "error"):
+            if status in ("failed", "error"):
                 reason = item.get("failure_reason", "unknown")
                 raise RuntimeError(f"Resource {resource_id} failed: {reason}")
 
-            # Wait for both completion AND storage_url to be populated
-            if state == "completed" and item.get("storage_url"):
+            if status == "completed" and (item.get("url") or item.get("storage_url")):
                 return item
 
             time.sleep(poll_interval)
@@ -221,7 +222,7 @@ class SoundsideClient:
             call_timeout: HTTP timeout for the initial tool call.
 
         Returns:
-            The completed resource dict (includes storage_url, state, metadata).
+            The completed resource dict (includes url, status, metadata).
         """
         result = self.call_tool(name, arguments, timeout=call_timeout)
         resource_id = result.get("resource_id")
@@ -229,8 +230,9 @@ class SoundsideClient:
             # Tool returned synchronously (no resource_id to poll)
             return result
 
-        state = result.get("state", "")
-        if state == "completed" and result.get("storage_url"):
+        status = result.get("status") or result.get("state", "")
+        asset_url = result.get("url") or result.get("storage_url")
+        if status == "completed" and asset_url:
             # Already complete (sync tool or instant result)
             return result
 
@@ -271,8 +273,9 @@ def main():
     elapsed = time.time() - t0
     print(f"  Resource ID: {result.get('resource_id', 'N/A')}")
     print(f"  Time: {elapsed:.1f}s")
-    if result.get("storage_url"):
-        print(f"  URL: {result['storage_url'][:80]}...")
+    asset_url = result.get("url") or result.get("storage_url")
+    if asset_url:
+        print(f"  URL: {asset_url[:80]}...")
 
     # 4. Analyze it
     if result.get("resource_id"):
@@ -309,8 +312,9 @@ def main():
             elapsed = time.time() - t0
             print(f"  ✅ Video complete in {elapsed:.1f}s")
             print(f"  Resource ID: {video.get('id', video.get('resource_id', 'N/A'))}")
-            if video.get("storage_url"):
-                print(f"  URL: {video['storage_url'][:80]}...")
+            video_url = video.get("url") or video.get("storage_url")
+            if video_url:
+                print(f"  URL: {video_url[:80]}...")
         except (RuntimeError, TimeoutError) as e:
             print(f"  ⚠️  Video generation failed: {e}")
 

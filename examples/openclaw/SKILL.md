@@ -37,23 +37,33 @@ Then restart: `openclaw gateway restart`
 Once connected, your agent has access to:
 
 ### Generation (6 tools)
-- `create_image` — Text-to-image across 5 providers (Vertex AI, Grok, Runway, MiniMax, Luma)
-- `create_video` — Text/image-to-video across 5 providers (Vertex Veo 3.1, Runway, MiniMax, Luma, Grok)
+- `create_image` — Text-to-image across 6 providers (Alibaba Wan, Grok, Luma, MiniMax, Runway, Vertex AI). Creative Freedom is API-key-only.
+- `create_video` — Text/image-to-video across 6 providers (Alibaba Wan, Grok, Luma, MiniMax, Runway, Vertex Veo 3.1). Creative Freedom is API-key-only.
 - `create_audio` — TTS, voice cloning, sound effects (MiniMax, Runway, Vertex AI). Creative Freedom is API-key-only.
 - `create_music` — Music from lyrics + style prompt (MiniMax). Creative Freedom is API-key-only.
-- `create_text` — LLM completions with structured output (Vertex Gemini, Grok, MiniMax)
-- `create_artifact` — Charts, presentations, documents, diagrams
+- `create_text` — LLM completions with structured output (Grok, MiniMax, Vertex Gemini)
+- `create_artifact` — Charts, presentations, documents, diagrams (plotly, pptx, docx, weasyprint, mermaid, gamma)
 
-### Editing & Analysis (6 tools)
+### Composition (1 tool)
+- `compose_video` — Server-side pipeline: enrich a plan, generate assets in parallel, assemble with transitions, audio ducking, and overlays. Use when you want a finished video from a script; use `create_video` + `edit_video` when you need manual control.
+
+### Editing (5 tools)
 - `edit_video` — Core video transforms: trim, concat, crossfade, speed, loop, color grading, subtitles, custom FFmpeg
 - `edit_audio` — Mix, replace, or pad audio on existing media
 - `compose_media` — Add text, overlay media, or build split-screen composites
 - `apply_effect` — Ken Burns, speed ramp, film grain, vignette
 - `extract_media` — Extract frames, frame sets, or audio tracks
-- `analyze_media` — Technical analysis, AI vision QA, canonical transcription, segment detection, and EDL export
+
+### Analysis (1 tool)
+- `analyze_media` — Technical ffprobe analysis, AI vision QA (Anthropic, Grok, OpenAI, Qwen, Vertex Gemini), canonical transcription, segment detection, and EDL export
+
+### Adapters — LoRA (3 tools)
+- `train_adapter` — Train a LoRA adapter from library media on DashScope (Wan) or Modal (HunyuanVideo, LTX-Video) backends
+- `list_adapters` — List LoRA adapters available to your account (free)
+- `manage_adapter` — Inspect, deploy, undeploy, delete, or select a checkpoint for an adapter
 
 ### Library (3 tools)
-- `lib_list` — Browse projects, collections, resources; **check resource status** (free)
+- `lib_list` — Browse projects, collections, resources; **check resource status and fetch signed asset URLs** (free)
 - `lib_manage` — Create/update/delete library entities
 - `lib_share` — Share projects by email
 
@@ -73,34 +83,40 @@ Use `lib_list` with `entity_type="resources"` and `resource_id=<id>`:
 lib_list(entity_type="resources", resource_id="<resource_id>")
 ```
 
-The response includes an `items` array. Check `items[0].state` and `items[0].storage_url`:
+The response includes an `items` array. Check `items[0].status` and `items[0].url`:
 
-| `state` | `storage_url` | Meaning |
+| `status` | `url` | Meaning |
 |---------|---------------|---------|
 | `pending` / `processing` | absent | Still generating — wait and poll again |
 | `completed` | present | Ready to use in downstream tools |
 | `failed` | absent | Generation failed — check `failure_reason` |
 
+> **Field names:** The current backend publishes `status` and `url`. Older releases used `state` and `storage_url`; Soundside still returns both aliases on some code paths, so defensive code should accept `status ?? state` and `url ?? storage_url`.
+
 ### Polling Strategy
 
 - **Poll interval:** 5–10 seconds
-- **Timeout:** 300s for most tools; 600s for video generation
-- **Exit conditions:** `state == "completed"` AND `storage_url` is present, OR `state == "failed"`
+- **Timeout:** 300s for most tools; 600s for video generation; 600s+ for LoRA training (minutes→hours)
+- **Exit conditions:** `status == "completed"` AND `url` is present, OR `status == "failed"`
 
 ### Which Tools Are Async?
 
 | Tool | Async? | Typical Time |
 |------|--------|-------------|
-| `create_video` | **Yes** — always | 30–120s |
+| `create_video` (all providers) | **Yes** — always | 30–120s |
 | `create_music` | **Yes** — always | 15–60s |
+| `compose_video` | **Yes** — many internal async calls | 2–20 min depending on length |
 | `create_image` (luma, runway) | **Yes** | 10–30s |
-| `create_image` (vertex, grok, minimax) | No — returns immediately | 3–10s |
-| `create_audio` (TTS) | No — returns immediately | 2–5s |
+| `create_image` (alibaba, grok, minimax, vertex) | No — returns immediately | 3–30s |
+| `create_audio` (vertex, runway) | No — returns immediately | 2–10s |
+| `create_audio` (minimax TTS, minimax sound effects) | **Yes** | 3–15s |
 | `create_text` | No — returns immediately | 1–5s |
 | `edit_video` / `edit_audio` / `compose_media` / `apply_effect` / `extract_media` | No — returns immediately | 2–15s |
-| `analyze_media` (`technical`, `vision_qa`, `export_edl`) | No — returns immediately | 2–10s |
+| `analyze_media` (`technical`, `vision_qa`, `export_edl`) | No — returns immediately | 2–15s |
 | `analyze_media` (`transcribe`, `detect_segments`) | Mixed — may run as a task on long inputs | 5–120s |
 | `create_artifact` | No — returns immediately | 1–5s |
+| `train_adapter` | **Yes** — long-running | minutes→hours depending on backend |
+| `list_adapters` / `manage_adapter` | No — sync | 1–5s |
 
 ### Polling Is Free
 
@@ -133,7 +149,7 @@ Chain operations by passing `resource_id` from one step to the next. Every resou
    → video_id (async, pending)
 
 3. Poll: lib_list(entity_type="resources", resource_id=video_id)
-   → Wait until state="completed"
+   → Wait until status="completed" and url is present
 
 4. create_audio(provider="minimax", mode="tts", text="In a quiet forest...")
    → narration_id (sync, immediately ready)
@@ -195,7 +211,7 @@ Smart Cut is video-first in Phase 1. Audio-only sources support transcript, dete
 
 ### 1. Using a Pending Resource Too Early
 **Problem:** Passing a resource that's still generating to `edit_video` or `analyze_media`.
-**Fix:** Always poll with `lib_list` until `state == "completed"` before chaining.
+**Fix:** Always poll with `lib_list` until `status == "completed"` and `url` is present before chaining.
 
 ### 2. Concat Before Resources Are Ready
 **Problem:** `edit_video(action="concat", resource_ids=[id1, id2])` fails because one resource is still processing.

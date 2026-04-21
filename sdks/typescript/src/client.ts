@@ -35,7 +35,7 @@ export class Soundside {
    * ```ts
    * const client = new Soundside({ apiKey: "mcp_your_key" });
    * const image = await client.createImage("A sunset over the ocean");
-   * console.log(image.storageUrl);
+   * console.log(image.url);
    * ```
    */
   constructor(options: SoundsideOptions) {
@@ -212,14 +212,16 @@ export class Soundside {
       });
       const items = (result.data.items ?? []) as Record<string, unknown>[];
       const item = items[0] ?? result.data;
-      const state = (item.state ?? item.status ?? "") as string;
+      const status = (item.status ?? item.state ?? "") as string;
 
-      if (state === "failed" || state === "error") {
+      if (status === "failed" || status === "error") {
         throw new SoundsideError(
           `Resource ${resourceId} failed: ${(item.failure_reason as string) ?? "unknown"}`,
         );
       }
-      if (state === "completed" && item.storage_url) {
+      // The backend surfaces the signed GCS URL as ``url`` on completed
+      // resources; older responses used ``storage_url`` — accept either.
+      if (status === "completed" && (item.url || item.storage_url)) {
         return toResource(item);
       }
 
@@ -245,7 +247,7 @@ export class Soundside {
   }
 
   private async ensureUrl(resource: Resource): Promise<Resource> {
-    if (resource.storageUrl) return resource;
+    if (resource.url) return resource;
     return this.getResource(resource.resourceId);
   }
 
@@ -285,7 +287,7 @@ export class Soundside {
     if (!result.resource) {
       throw new SoundsideError(`No resource_id in response: ${JSON.stringify(result.data)}`);
     }
-    if (wait && result.resource.state !== "completed") {
+    if (wait && result.resource.status !== "completed") {
       return this.waitForResource(result.resource.resourceId, { timeout: waitTimeout });
     }
     return result.resource;
@@ -325,7 +327,7 @@ export class Soundside {
     if (!result.resource) {
       throw new SoundsideError(`No resource_id in response: ${JSON.stringify(result.data)}`);
     }
-    if (wait && result.resource.state !== "completed") {
+    if (wait && result.resource.status !== "completed") {
       return this.waitForResource(result.resource.resourceId, { timeout: waitTimeout });
     }
     return result.resource;
@@ -490,23 +492,29 @@ function toResource(data: Record<string, unknown>): Resource {
   }
   const meta = rawMeta as Record<string, unknown>;
 
-  // storage_url may be top-level, or nested in metadata.storage.url
-  let storageUrl = data.storage_url as string | undefined;
-  if (!storageUrl) {
+  // Canonical field on the server is ``url``. Older responses used
+  // ``storage_url`` and one legacy persistence path nested it under
+  // ``metadata.storage.url`` — accept any of them.
+  let url =
+    (data.url as string | undefined) ?? (data.storage_url as string | undefined);
+  if (!url) {
     const storage = meta.storage as Record<string, unknown> | undefined;
-    storageUrl = storage?.url as string | undefined;
+    url = storage?.url as string | undefined;
   }
-  if (!storageUrl) {
-    storageUrl = data.thumbnail_url as string | undefined;
-  }
+
+  const status = (data.status ?? data.state ?? "completed") as string;
+  const thumbnailUrl = data.thumbnail_url as string | undefined;
 
   return {
     resourceId: (data.resource_id ?? data.id) as string,
-    state: (data.state ?? data.status ?? "completed") as string,
-    storageUrl,
+    status,
+    state: status, // alias
+    url,
+    storageUrl: url, // alias (same value) for legacy consumers
     durationMs: data.duration_ms as number | undefined,
     provider: (data.provider ?? meta.provider) as string | undefined,
     mimeType: (data.mime_type ?? meta.mime_type) as string | undefined,
+    thumbnailUrl,
     metadata: meta,
   };
 }

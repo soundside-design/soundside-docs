@@ -209,8 +209,9 @@ def main():
     # --- Done ---
     print(f"\n✅ Film complete!")
     print(f"   Resource ID: {final_id}")
-    if final.get("storage_url"):
-        print(f"   Download: {final['storage_url'][:80]}...")
+    asset_url = final.get("url") or final.get("storage_url")
+    if asset_url:
+        print(f"   Download: {asset_url[:80]}...")
     print(f"\n   To check status later:")
     print(f'   lib_list(entity_type="resources", resource_id="{final_id}")')
 
