@@ -31,6 +31,8 @@ Accept: application/json, text/event-stream
 
 The response includes a `mcp-session-id` header — include it in all subsequent requests.
 
+> **Session lifetime:** Sessions expire after roughly 2 minutes of inactivity. If a subsequent request returns `400 Bad Request: No valid session ID provided`, re-initialize with a fresh `initialize` call to get a new session ID.
+
 ## 3. List Available Tools
 
 ```json
