@@ -4,6 +4,11 @@
 
 Soundside exposes 19 MCP tools for generating, editing, composing, extracting, and analyzing media — images, video, audio, music, text, and business artifacts — plus LoRA adapter fine-tuning and server-side video composition. Connect any MCP client. Pay with an API key (credits) or crypto (x402 USDC on Base, no account needed).
 
+> **Currency 2026-08 (2026-08-23)**
+> - **Removed:** Luma (entirely) and Runway image/video generation. Runway is now audio-only — TTS and sound effects via `create_audio`.
+> - **Added:** Lyria 3 music generation (`create_music`), Grok TTS (`create_audio`), Grok per-second × resolution video pricing, Alibaba Wan 2.7 video models (international default), MiniMax H3 video adapter.
+> - Provider and pricing data below matches the live x402 catalog: `GET https://mcp.soundside.ai/api/x402/status`.
+
 ## Quick Start
 
 ```bash
@@ -25,12 +30,12 @@ POST https://mcp.soundside.ai/mcp
 
 | Tool | What It Does | Providers |
 |------|-------------|-----------|
-| `create_image` | Text-to-image, character references | Alibaba (Wan), Grok, Luma, MiniMax, Runway, Vertex AI |
-| `create_video` | Text-to-video, image-to-video, video extension | Alibaba (Wan), Grok, Luma, MiniMax, Runway, Vertex AI (Veo 3.1) |
-| `create_audio` | TTS, sound effects, voice cloning, voice design | MiniMax, Runway, Vertex AI |
-| `create_music` | Music from lyrics and style prompts | MiniMax |
-| `create_text` | LLM chat completions, structured output | Grok, MiniMax, Vertex AI (Gemini) |
-| `create_artifact` | Charts, presentations, documents, diagrams; bundle mode for multi-artifact packages | plotly, pptx, docx, weasyprint, mermaid, gamma |
+| `create_image` | Text-to-image, character references | Alibaba (Wan), Grok, MiniMax, Vertex AI |
+| `create_video` | Text-to-video, image-to-video, video extension | Alibaba (Wan 2.7), Grok, MiniMax (Hailuo/H3), Vertex AI (Veo 3.1) |
+| `create_audio` | TTS, sound effects, voice cloning, voice design | Grok, MiniMax, Runway (audio-only), Vertex AI |
+| `create_music` | Music from lyrics and style prompts | MiniMax, Lyria 3 |
+| `create_text` | LLM chat completions, structured output | Grok, MiniMax, Qwen, Vertex AI (Gemini) |
+| `create_artifact` | Charts, presentations, documents, diagrams; bundle mode for multi-artifact packages | plotly, pptx, docx, weasyprint, mermaid, gamma, soundside.ai |
 
 ### Composition
 
@@ -72,14 +77,18 @@ POST https://mcp.soundside.ai/mcp
 
 ## Pricing
 
-Soundside aims to break even on provider pass-through costs with a small margin (~10%). The editing engine and library are priced at $0.01/call; vision QA is $0.03.
+Soundside uses a credit system: **100 credits = $1 USD**.
+
+- **AI provider pass-through** (generation tools) is billed at the provider's wholesale rate, rounded up to the nearest cent — no markup.
+- **Platform tools** (editing engine, library) are fixed-price: $0.01/call; vision QA is $0.03.
+- Every call is quoted before it runs. The estimate is a **ceiling** — the actual charge is never more than the quote — and each tool call is settled exactly once.
 
 **Live pricing is always available at:**
 ```
 GET https://mcp.soundside.ai/api/x402/status
 ```
 
-This returns machine-readable per-tool, per-provider USDC prices. Prices are DB-driven and may change — **always check the endpoint rather than hardcoding**.
+This returns machine-readable per-tool, per-provider USDC prices. Prices are DB-driven and may change — **always check the endpoint rather than hardcoding**. For variable-priced tools the published amount is a ceiling quote (worst case), not the typical settled price — rows carry a `price_note` where this matters.
 
 ## x402: Pay-Per-Call with Crypto
 

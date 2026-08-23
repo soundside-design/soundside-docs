@@ -125,10 +125,10 @@ Each generation tool supports multiple AI providers. If you don't specify one, S
 | Open-weights video with tight controls | `alibaba` (Wan) | 13 operations incl. VACE, i2v, kf2v, animate |
 | Best value video | `minimax` (Hailuo) | Good quality, lowest cost |
 | Fast image generation | `vertex` or `grok` | Sync, sub-10s |
-| Cheapest images | `luma` ($0.02) / `alibaba` ($0.05) / `minimax` ($0.04) | |
-| Text-to-speech | `minimax` | Multiple voices, voice cloning |
+| Cheapest images | `minimax` ($0.04) / `alibaba` ($0.05) / `vertex` ($0.08) | |
+| Text-to-speech | `minimax` or `grok` | MiniMax: multiple voices, voice cloning. Grok: 26 multilingual voices, sync |
 | Transcription (STT) | `vertex` | EN-US, word-level timestamps |
-| Music generation | `minimax` | Only public provider (Creative Freedom is API-key-only) |
+| Music generation | `lyria` (Lyria 3) or `minimax` | Lyria is sync; MiniMax is async (Creative Freedom is API-key-only) |
 | LLM text | `vertex` (Gemini) | General purpose |
 | Vision QA over video | `vertex` (Gemini 2.5 Pro, default) or `qwen` | Also: `anthropic`, `grok`, `openai` |
 
@@ -136,8 +136,8 @@ Each generation tool supports multiple AI providers. If you don't specify one, S
 
 | Behavior | Tools |
 |----------|-------|
-| **Sync** — result in response | `create_image` (alibaba, grok, minimax, vertex), `create_text`, `create_audio` (vertex, runway), `create_artifact`, `edit_video`, `compose_media`, `edit_audio`, `apply_effect`, `extract_media`, `analyze_media` (technical/vision_qa/export_edl), `list_adapters`, `manage_adapter`, `lib_*` |
-| **Async** — returns `resource_id`, completes later | `create_video` (all providers), `create_music`, `compose_video`, `create_image` (luma, runway), `create_audio` (minimax TTS, minimax sound_effect), `analyze_media` (transcribe/detect_segments on long inputs), `train_adapter` |
+| **Sync** — result in response | `create_image` (alibaba, grok, minimax, vertex), `create_text`, `create_audio` (grok, vertex), `create_music` (lyria), `create_artifact`, `edit_video`, `compose_media`, `edit_audio`, `apply_effect`, `extract_media`, `analyze_media` (technical/vision_qa/export_edl), `list_adapters`, `manage_adapter`, `lib_*` |
+| **Async** — returns `resource_id`, completes later | `create_video` (all providers), `create_music` (minimax), `compose_video`, `create_audio` (minimax, runway), `analyze_media` (transcribe/detect_segments on long inputs), `train_adapter` |
 
 For async tools, listen for MCP `notifications/resources/updated`, poll with `lib_list`, or use MCP tasks (see below).
 

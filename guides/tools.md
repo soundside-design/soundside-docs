@@ -2,6 +2,8 @@
 
 Complete reference for all 19 Soundside MCP tools. Always call `tools/list` at runtime to get the canonical schemas — this document is a human-readable companion.
 
+> **Currency 2026-08 (2026-08-23):** Luma removed entirely; Runway is audio-only (`create_audio` TTS + sound effects). New: `create_music` Lyria 3, `create_audio` Grok TTS, Grok per-second × resolution video pricing, Alibaba Wan 2.7 video defaults, MiniMax H3 video adapter.
+
 **Live pricing:** `GET https://mcp.soundside.ai/api/x402/status`
 
 **Tool surface:**
@@ -18,13 +20,13 @@ Complete reference for all 19 Soundside MCP tools. Always call `tools/list` at r
 
 Generate images from text prompts. Supports character references for consistent characters across generations.
 
-**Providers:** `alibaba` (Wan), `grok`, `luma`, `minimax`, `runway`, `vertex` (Gemini)
+**Providers:** `alibaba` (Wan), `grok`, `minimax`, `vertex` (Gemini)
 
 | Parameter | Required | Type | Description |
 |-----------|----------|------|-------------|
 | `provider` | yes | string | AI provider |
 | `prompt` | yes | string | Text description of desired image |
-| `character_reference` | no | string | Resource ID or URL of a reference image for consistent character depiction (luma, minimax, grok) |
+| `character_reference` | no | string | Resource ID or URL of a reference image for consistent character depiction (minimax, grok) |
 | `advanced_options` | no | object | Provider-specific settings |
 | `project_id` | no | string | Library project UUID |
 | `collection_id` | no | string | Library collection UUID |
@@ -60,9 +62,11 @@ Generate images from text prompts. Supports character references for consistent 
 
 Generate video from text prompt or image. Supports text-to-video, image-to-video (via `first_frame`), video extension, and character references.
 
-**Providers:** `alibaba` (Wan), `grok`, `luma` (Ray-2), `minimax` (Hailuo), `runway`, `vertex` (Veo 3.1)
+**Providers:** `alibaba` (Wan 2.7), `grok`, `minimax` (Hailuo/H3), `vertex` (Veo 3.1)
 
 All providers are **async** — returns a `resource_id` immediately, completes in background.
+
+**x402 amounts are ceiling quotes:** the catalog publishes the worst case, not the typical settled price. `alibaba` publishes a $24 reservation ceiling, but the actual 402 challenge quotes the metered per-second price for the requested duration and resolution; a default `grok` text-to-video (8s, 720p) quotes $1.12 against the $3.82 ceiling; `minimax` runs from $0.28 (H3 is metered up to the $1.95 ceiling); `vertex` from $1.60 against a $2.64 ceiling.
 
 | Parameter | Required | Type | Description |
 |-----------|----------|------|-------------|
@@ -70,9 +74,9 @@ All providers are **async** — returns a `resource_id` immediately, completes i
 | `prompt` | yes | string | Text description of desired video |
 | `first_frame` | no | string | Resource ID or URL for image-to-video |
 | `resource_id` | no | string | Alias for `first_frame` |
-| `character_reference` | no | string | Reference image for consistent characters (luma, minimax, grok, vertex) |
+| `character_reference` | no | string | Reference image for consistent characters (minimax, grok, vertex) |
 | `last_frame` | no | string | Resource ID or URL for last frame guidance |
-| `extend_video` | no | string | Resource ID or URL of video to extend/continue. Supported by: `vertex` (Veo), `grok` (6-10s), `luma` (Ray-2, ~5s). Mutually exclusive with `first_frame` and `input_video`. |
+| `extend_video` | no | string | Resource ID or URL of video to extend/continue. Supported by: `vertex` (Veo), `grok` (6-10s). Mutually exclusive with `first_frame` and `input_video`. |
 | `input_video` | no | string | Resource ID for video-to-video or Act-Two |
 | `input_audio` | no | string | Resource ID for Act-Two audio input |
 | `advanced_options` | no | object | Provider-specific settings |
@@ -103,7 +107,7 @@ All providers are **async** — returns a `resource_id` immediately, completes i
 }
 ```
 
-**Example — extend/continue an existing video (Grok or Luma):**
+**Example — extend/continue an existing video (Grok):**
 ```json
 {
   "name": "create_video",
@@ -115,7 +119,7 @@ All providers are **async** — returns a `resource_id` immediately, completes i
 }
 ```
 
-**Note:** `extend_video`, `first_frame`, and `input_video` are mutually exclusive on Grok. For Luma, `extend_video` takes precedence over `first_frame`. `character_reference` is mutually exclusive with `first_frame` on some providers.
+**Note:** `extend_video`, `first_frame`, and `input_video` are mutually exclusive on Grok. `character_reference` is mutually exclusive with `first_frame` on some providers.
 
 **MiniMax resolution defaults:** For durations ≤ 6s, MiniMax Hailuo-2.3 defaults to 1080P output. For 10s clips, 768P is used (API cap). Override via `advanced_options: {"resolution": "768P"}`.
 
@@ -125,8 +129,10 @@ All providers are **async** — returns a `resource_id` immediately, completes i
 
 Create audio content. Supports multiple modes: TTS, sound effects, voice cloning, voice design, and voice listing.
 
-**Providers (x402 + API key):** `minimax`, `runway` (sound effects), `vertex`.
+**Providers (x402 + API key):** `grok` (TTS), `minimax`, `runway` (TTS + sound effects), `vertex`.
 **Additionally via API key only:** `creative_freedom` (self-hosted CosyVoice on Modal).
+
+Runway is audio-only — it no longer generates images or video. Grok TTS is sync and supports 26 multilingual voices (list them with `mode: "list_voices"`).
 
 | Parameter | Required | Type | Description |
 |-----------|----------|------|-------------|
@@ -190,11 +196,11 @@ Use `analyze_media(analysis_type="transcribe")` for the canonical STT surface. `
 
 Generate music from lyrics and a style prompt.
 
-**Provider:** `minimax`
+**Providers:** `minimax`, `lyria` (Lyria 3)
 
 | Parameter | Required | Type | Description |
 |-----------|----------|------|-------------|
-| `provider` | yes | string | `minimax` |
+| `provider` | yes | string | `minimax` or `lyria` |
 | `lyrics` | no | string | Song lyrics (can be empty for instrumental) |
 | `prompt` | no | string | Style/genre description |
 | `refer_voice` | no | string | _(Deprecated — use `reference_audio_resource_id` with `reference_audio_purpose: "voice"`)_ Reference voice URL |
@@ -203,9 +209,9 @@ Generate music from lyrics and a style prompt.
 | `reference_audio_purpose` | no | string | `song`, `voice`, or `instrumental` |
 | `format` | no | string | Output: `mp3`, `wav`, `pcm` |
 
-**Async** — returns `resource_id`, completes in background.
+**Async** on `minimax` — returns `resource_id`, completes in background. `lyria` is sync (result in response).
 
-**Example:**
+**Example — MiniMax:**
 ```json
 {
   "name": "create_music",
@@ -217,13 +223,25 @@ Generate music from lyrics and a style prompt.
 }
 ```
 
+**Example — Lyria 3:**
+```json
+{
+  "name": "create_music",
+  "arguments": {
+    "provider": "lyria",
+    "lyrics": "[verse]\nSunlight through the trees\nA fox runs wild and free",
+    "prompt": "Gentle folk acoustic, warm and uplifting"
+  }
+}
+```
+
 ---
 
 ## create_text
 
 Generate text using LLM chat completions. Supports structured JSON output.
 
-**Providers:** `vertex` (Gemini, default), `grok`, `minimax`
+**Providers:** `vertex` (Gemini, default), `grok`, `minimax`, `qwen`
 
 | Parameter | Required | Type | Description |
 |-----------|----------|------|-------------|
@@ -310,7 +328,7 @@ Create business artifacts: presentations, charts, documents, or diagrams. Suppor
   "name": "create_artifact",
   "arguments": {
     "type": "diagram",
-    "diagram_code": "graph TD; A[Agent] -->|MCP| B[Soundside]; B --> C[Vertex AI]; B --> D[MiniMax]; B --> E[Luma]"
+    "diagram_code": "graph TD; A[Agent] -->|MCP| B[Soundside]; B --> C[Vertex AI]; B --> D[MiniMax]; B --> E[Grok]"
   }
 }
 ```
@@ -673,7 +691,7 @@ Different AI video providers output different native resolutions. The `concat` a
 
 | Provider | Native Output | At 720P concat | At 1080P concat |
 |----------|--------------|----------------|-----------------|
-| Vertex, Luma, Runway | 1280×720 | no change ✓ | slight upscale |
+| Vertex | 1280×720 | no change ✓ | slight upscale |
 | MiniMax (≤6s default) | 1920×1080 | **downscaled ⬇️** | no change ✓ |
 | MiniMax (10s) | 1366×768 | downscaled | slight upscale |
 | Grok | 848×480 | upscaled | larger upscale |
@@ -681,7 +699,7 @@ Different AI video providers output different native resolutions. The `concat` a
 ### Choosing a Target
 
 **Use 720P (1280×720) when:**
-- Your workflow mixes multiple providers (especially Vertex/Luma/Runway which output 720P natively)
+- Your workflow mixes multiple providers (especially Vertex, which outputs 720P natively)
 - You're building for social media, fast iteration, or internal review
 - File size and processing speed matter
 - Grok is in the mix (upscaling 480P further to 1080P loses quality)
@@ -807,7 +825,7 @@ Server-side video composition pipeline. Accepts a composition plan (sparse brief
 | `collection_id` | no | string | Library collection UUID. |
 | `advanced_options` | no | object | Pipeline-level overrides (visual/narration provider defaults, QA thresholds, etc.). |
 
-**Pricing:** flat per call (see `/api/x402/status` — each generated asset bills individually through the underlying tools). Long videos trigger many paid sub-calls.
+**Pricing:** the $0.05 (5-credit) catalog price is the orchestration fee only; the 402 challenge quotes this fee plus the generation calls the submitted plan requires, priced per request. Each generated asset bills individually through the underlying tools — long videos trigger many paid sub-calls.
 
 **Example — brief + narration:**
 ```json

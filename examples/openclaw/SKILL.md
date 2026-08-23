@@ -37,10 +37,10 @@ Then restart: `openclaw gateway restart`
 Once connected, your agent has access to:
 
 ### Generation (6 tools)
-- `create_image` — Text-to-image across 6 providers (Alibaba Wan, Grok, Luma, MiniMax, Runway, Vertex AI). Creative Freedom is API-key-only.
-- `create_video` — Text/image-to-video across 6 providers (Alibaba Wan, Grok, Luma, MiniMax, Runway, Vertex Veo 3.1). Creative Freedom is API-key-only.
-- `create_audio` — TTS, voice cloning, sound effects (MiniMax, Runway, Vertex AI). Creative Freedom is API-key-only.
-- `create_music` — Music from lyrics + style prompt (MiniMax). Creative Freedom is API-key-only.
+- `create_image` — Text-to-image across 4 providers (Alibaba Wan, Grok, MiniMax, Vertex AI). Creative Freedom is API-key-only.
+- `create_video` — Text/image-to-video across 4 providers (Alibaba Wan 2.7, Grok, MiniMax Hailuo/H3, Vertex Veo 3.1). Creative Freedom is API-key-only.
+- `create_audio` — TTS, voice cloning, sound effects (Grok, MiniMax, Runway, Vertex AI). Runway is audio-only. Creative Freedom is API-key-only.
+- `create_music` — Music from lyrics + style prompt (MiniMax, Lyria 3). Creative Freedom is API-key-only.
 - `create_text` — LLM completions with structured output (Grok, MiniMax, Vertex Gemini)
 - `create_artifact` — Charts, presentations, documents, diagrams (plotly, pptx, docx, weasyprint, mermaid, gamma)
 
@@ -104,12 +104,12 @@ The response includes an `items` array. Check `items[0].status` and `items[0].ur
 | Tool | Async? | Typical Time |
 |------|--------|-------------|
 | `create_video` (all providers) | **Yes** — always | 30–120s |
-| `create_music` | **Yes** — always | 15–60s |
+| `create_music` (minimax) | **Yes** | 15–60s |
+| `create_music` (lyria) | No — returns immediately | 5–30s |
 | `compose_video` | **Yes** — many internal async calls | 2–20 min depending on length |
-| `create_image` (luma, runway) | **Yes** | 10–30s |
 | `create_image` (alibaba, grok, minimax, vertex) | No — returns immediately | 3–30s |
-| `create_audio` (vertex, runway) | No — returns immediately | 2–10s |
-| `create_audio` (minimax TTS, minimax sound effects) | **Yes** | 3–15s |
+| `create_audio` (grok, vertex) | No — returns immediately | 2–10s |
+| `create_audio` (minimax, runway) | **Yes** | 3–15s |
 | `create_text` | No — returns immediately | 1–5s |
 | `edit_video` / `edit_audio` / `compose_media` / `apply_effect` / `extract_media` | No — returns immediately | 2–15s |
 | `analyze_media` (`technical`, `vision_qa`, `export_edl`) | No — returns immediately | 2–15s |
@@ -298,7 +298,7 @@ This keeps workflow state durable without local storage.
 
 **Produce a narrated video:**
 ```
-"Generate a video of waves crashing using Luma,
+"Generate a video of waves crashing using MiniMax,
  poll until complete,
  create TTS narration saying 'The ocean calls to those who listen',
  then mix the narration into the video"
@@ -314,7 +314,7 @@ This keeps workflow state durable without local storage.
 
 Live pricing: `GET https://mcp.soundside.ai/api/x402/status`
 
-Soundside charges near-cost on provider pass-through (~10% margin). Editing and library calls are generally $0.01/call. `analyze_media` is priced by mode: $0.01 for `technical` and `export_edl`, $0.02 for `transcribe` and `detect_segments`, and $0.03 for `vision_qa`. A typical video pipeline (image → video → edit → analyze) costs $0.50-3.00 depending on provider.
+Soundside uses credits (100 credits = $1 USD). Provider pass-through (generation tools) is billed at the provider's wholesale rate with no markup; editing and library calls are generally $0.01/call. `analyze_media` is priced by mode: $0.01 for `technical` and `export_edl`, $0.02 for `transcribe` and `detect_segments`, and $0.03 for `vision_qa`. Every call is quoted before it runs — the quote is a ceiling, and each call settles exactly once. A typical video pipeline (image → video → edit → analyze) costs $0.50-3.00 depending on provider.
 
 ## Docs
 
