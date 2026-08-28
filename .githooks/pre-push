@@ -1,0 +1,26 @@
+#!/bin/sh
+# Local CI gate — no GitHub Actions (operator directive 2026-08-12).
+# Runs on every push: (1) gitleaks secret scan of the outgoing commit range,
+# (2) public contract validator (requires the three-repo workspace checkout:
+# ../ssd-mcp and ../soundside-ai siblings), (3) the pytest suite.
+# Enable once per clone with:
+#   git config core.hooksPath .githooks
+set -e
+ZERO=0000000000000000000000000000000000000000
+while read local_ref local_sha remote_ref remote_sha; do
+  [ "$local_sha" = "$ZERO" ] && continue  # branch deletion — nothing to scan
+  # New branch: scan only the commits the remote does not already have. A bare
+  # "$local_sha" would walk the ENTIRE history (which carries old, already-revoked
+  # findings) and block every new-branch push.
+  if [ "$remote_sha" = "$ZERO" ]; then range="$local_sha --not --remotes=origin"; else range="$remote_sha..$local_sha"; fi
+  echo "[pre-push] gitleaks: scanning $range"
+  gitleaks git --redact --log-opts="$range" . || {
+    echo "[pre-push] BLOCKED: gitleaks found secrets in outgoing commits." >&2; exit 1; }
+done
+echo "[pre-push] public contract validator"
+python3 scripts/validate_public_contract.py || {
+  echo "[pre-push] BLOCKED: public contract validation failed." >&2; exit 1; }
+echo "[pre-push] tests"
+uv run --with pytest python -m pytest tests/ -q || {
+  echo "[pre-push] BLOCKED: tests failed." >&2; exit 1; }
+echo "[pre-push] all gates passed"

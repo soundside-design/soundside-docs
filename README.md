@@ -116,6 +116,16 @@ See [x402 Guide](./guides/x402.md) for full setup.
 - **[TypeScript — API Key](./examples/typescript/soundside-client.ts)** — Node.js MCP client
 - **[OpenClaw Skill](./examples/openclaw/SKILL.md)** — One-line config for OpenClaw agents
 
+## Local validation (pre-push hook)
+
+There is no GitHub-hosted CI; validation runs locally before every push. Enable once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Requirements: `brew install gitleaks` and [`uv`](https://docs.astral.sh/uv/). The hook runs three gates on every push: (1) a gitleaks secret scan of the outgoing commit range, (2) `python3 scripts/validate_public_contract.py`, and (3) the pytest suite (`uv run --with pytest python -m pytest tests/ -q`). The contract validator compares this portal against the vendored MCP contract and its source of truth in the sibling repos, so pushing requires the three-repo workspace checkout (`../ssd-mcp` and `../soundside-ai` next to this repo); a standalone clone cannot pass the gate.
+
 ## Links
 
 - **Website**: [soundside.ai](https://soundside.ai)
