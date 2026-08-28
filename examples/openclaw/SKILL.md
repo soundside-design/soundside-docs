@@ -40,12 +40,12 @@ Once connected, your agent has access to:
 - `create_image` — Text-to-image across 4 providers (Alibaba Wan, Grok, MiniMax, Vertex AI). Creative Freedom is API-key-only.
 - `create_video` — Text/image-to-video across 4 providers (Alibaba Wan 2.7, Grok, MiniMax Hailuo/H3, Vertex Veo 3.1). Creative Freedom is API-key-only.
 - `create_audio` — TTS, voice cloning, sound effects (Grok, MiniMax, Runway, Vertex AI). Runway is audio-only. Creative Freedom is API-key-only.
-- `create_music` — Music from lyrics + style prompt (MiniMax, Lyria 3). Creative Freedom is API-key-only.
+- `create_music` — Music from lyrics + style prompt (Lyria 3; Creative Freedom is authenticated-credit only). MiniMax music is unavailable.
 - `create_text` — LLM completions with structured output (Grok, MiniMax, Vertex Gemini)
 - `create_artifact` — Charts, presentations, documents, diagrams (plotly, pptx, docx, weasyprint, mermaid, gamma)
 
 ### Composition (1 tool)
-- `compose_video` — Server-side pipeline: enrich a plan, generate assets in parallel, assemble with transitions, audio ducking, and overlays. Use when you want a finished video from a script; use `create_video` + `edit_video` when you need manual control.
+- `compose_video` — Authenticated-credit-only asynchronous composition using Grok visuals, MiniMax narration, and Lyria music. Stable is the default profile; plans are recursively strict and media inputs are authorized Soundside UUIDs. Public autonomy/task/hold-resume controls and URLs are unsupported. Child calls are itemized and a successful root adds a 5-credit orchestration fee. Use `lib_list` to recover state after reconnecting.
 
 ### Editing (5 tools)
 - `edit_video` — Core video transforms: trim, concat, crossfade, speed, loop, color grading, subtitles, custom FFmpeg
@@ -56,10 +56,11 @@ Once connected, your agent has access to:
 
 ### Analysis (1 tool)
 - `analyze_media` — Technical ffprobe analysis, AI vision QA (Anthropic, Grok, OpenAI, Qwen, Vertex Gemini), canonical transcription, segment detection, and EDL export
+- `create_audio(mode="transcribe")` — Deprecated v1.x transcription compatibility shim; new integrations use `analyze_media(analysis_type="transcribe")`
 
 ### Adapters — LoRA (3 tools)
 - `train_adapter` — Train a LoRA adapter from library media on DashScope (Wan) or Modal (HunyuanVideo, LTX-Video) backends
-- `list_adapters` — List LoRA adapters available to your account (free)
+- `list_adapters` — List LoRA adapters available to your account
 - `manage_adapter` — Inspect, deploy, undeploy, delete, or select a checkpoint for an adapter
 
 ### Library (3 tools)
@@ -101,22 +102,24 @@ The response includes an `items` array. Check `items[0].status` and `items[0].ur
 
 ### Which Tools Are Async?
 
-| Tool | Async? | Typical Time |
+| Tool | Async? | Non-binding planning range (not an SLA) |
 |------|--------|-------------|
 | `create_video` (all providers) | **Yes** — always | 30–120s |
-| `create_music` (minimax) | **Yes** | 15–60s |
+| `create_music` (creative_freedom) | **Yes** | 15–60s |
 | `create_music` (lyria) | No — returns immediately | 5–30s |
 | `compose_video` | **Yes** — many internal async calls | 2–20 min depending on length |
-| `create_image` (alibaba, grok, minimax, vertex) | No — returns immediately | 3–30s |
+| `create_image` (grok, minimax, vertex, creative_freedom) | No — returns immediately | 3–30s |
+| `create_image` (alibaba) | **Yes** | 3–30s |
 | `create_audio` (grok, vertex) | No — returns immediately | 2–10s |
 | `create_audio` (minimax, runway) | **Yes** | 3–15s |
 | `create_text` | No — returns immediately | 1–5s |
 | `edit_video` / `edit_audio` / `compose_media` / `apply_effect` / `extract_media` | No — returns immediately | 2–15s |
 | `analyze_media` (`technical`, `vision_qa`, `export_edl`) | No — returns immediately | 2–15s |
-| `analyze_media` (`transcribe`, `detect_segments`) | Mixed — may run as a task on long inputs | 5–120s |
+| `analyze_media` (`transcribe`, `detect_segments`) | No — waits and returns a final result | 5–120s |
 | `create_artifact` | No — returns immediately | 1–5s |
 | `train_adapter` | **Yes** — long-running | minutes→hours depending on backend |
-| `list_adapters` / `manage_adapter` | No — sync | 1–5s |
+| `list_adapters` | No — sync | 1–5s |
+| `manage_adapter` | Mixed — deploy/undeploy may remain pending | 1–5s or longer for deployment |
 
 ### Polling Is Free
 
@@ -314,7 +317,9 @@ This keeps workflow state durable without local storage.
 
 Live pricing: `GET https://mcp.soundside.ai/api/x402/status`
 
-Soundside uses credits (100 credits = $1 USD). Provider pass-through (generation tools) is billed at the provider's wholesale rate with no markup; editing and library calls are generally $0.01/call. `analyze_media` is priced by mode: $0.01 for `technical` and `export_edl`, $0.02 for `transcribe` and `detect_segments`, and $0.03 for `vision_qa`. Every call is quoted before it runs — the quote is a ceiling, and each call settles exactly once. A typical video pipeline (image → video → edit → analyze) costs $0.50-3.00 depending on provider.
+One credit is $0.01 USD. Published metered rates are based on provider cost with an approximately 10% platform margin unless a tool-specific flat fee is listed. Compose adds a five-credit success-only orchestration fee and separately itemizes child calls; it is not available through x402. Every paid call receives a pre-execution estimate and settles once.
+
+At the pro tier, `lib_list` alone is free, Compose is authenticated-credit only, and the remaining 17 tools are x402-eligible subject to their provider/mode lanes.
 
 ## Docs
 

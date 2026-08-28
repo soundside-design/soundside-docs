@@ -6,6 +6,8 @@ __pycache__/
 .Python
 *.egg-info/
 dist/
+sdks/python/dist/
+sdks/typescript/dist/
 build/
 .venv/
 venv/

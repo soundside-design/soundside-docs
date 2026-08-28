@@ -5,7 +5,7 @@ Demonstrates the full creative pipeline:
   1. Generate a portrait image (vertex)
   2. Generate video from that image (minimax I2V)
   3. Generate narration (minimax TTS)
-  4. Generate background music (minimax)
+  4. Generate background music (Lyria)
   5. Add timed text overlay to video
   6. Extend video with Ken Burns if narration is longer
   7. Mix narration into video
@@ -87,16 +87,15 @@ def main():
     print(f"   Narration ready ({time.time()-t0:.1f}s)")
 
     # --- Step 4: Generate music ---
-    print("\n🎵 Step 4: Generating background music (async)...")
+    print("\n🎵 Step 4: Generating background music...")
     t0 = time.time()
     music = client.call("create_music", {
-        "provider": "minimax",
-        "lyrics": "[Instrumental]",  # minimax music-2.0 requires non-empty lyrics
+        "provider": "lyria",
+        "lyrics": "",
         "prompt": "Gentle folk acoustic, warm and uplifting, children's story soundtrack",
     })
     music_id = music["resource_id"]
     print(f"   Submitted: {music_id}")
-    client.wait_for_resource(music_id)
     print(f"   Music ready ({time.time()-t0:.1f}s)")
 
     # --- Step 5: Add text overlay (timed: visible for first 4s only) ---

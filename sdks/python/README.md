@@ -2,10 +2,14 @@
 
 Python SDK for the [Soundside](https://soundside.ai) AI media generation platform.
 
-## Install
+## Install from a local checkout
+
+This SDK is source-only. Soundside does not publish a wheel or registry package from this repository.
 
 ```bash
-pip install soundside
+python3 -m venv .venv
+. .venv/bin/activate
+pip install ./soundside-docs/sdks/python
 ```
 
 ## Quickstart
@@ -16,7 +20,7 @@ from soundside import Soundside
 client = Soundside(api_key="mcp_your_key_here")
 
 # Generate an image (~4 credits / $0.04)
-image = client.create_image("A sunset over the ocean, cinematic lighting")
+image = client.create_image("A sunset over the ocean, cinematic lighting", provider="vertex")
 print(image.url)
 
 # Generate a video (async — waits automatically, ~20-80 credits)
@@ -27,7 +31,7 @@ video = client.create_video(
 print(video.url)
 
 # Generate text
-result = client.create_text("Write a haiku about the ocean")
+result = client.create_text("Write a haiku about the ocean", provider="vertex")
 print(result.text)
 ```
 
@@ -39,10 +43,10 @@ Soundside exposes 19 MCP tools. The SDK has typed wrappers for the most common o
 
 | Method | What it does | Sync/Async |
 |--------|-------------|------------|
-| `create_image()` | Generate images from text | Sync |
+| `create_image()` | Generate images from text | Varies (Alibaba is pending) |
 | `create_video()` | Generate video clips | Async (auto-waits) |
 | `create_audio()` | TTS, sound effects, voice cloning, voice design | Varies |
-| `create_music()` | Generate music tracks | Async (auto-waits) |
+| `create_music()` | Generate music tracks | Varies (auto-waits when pending) |
 | `create_text()` | LLM text generation | Sync |
 | `create_artifact()` | Presentations, charts, documents, diagrams | Sync |
 | `edit_video()` | Video edits (trim, concat, crossfade, color_grade, ...) | Sync |
@@ -66,7 +70,7 @@ See `soundside-docs/guides/tools.md` for the full reference.
 By default, `create_video()` and `create_music()` wait for completion. Pass `wait=False` to get the resource ID immediately:
 
 ```python
-resource = client.create_video("A timelapse of clouds", wait=False)
+resource = client.create_video("A timelapse of clouds", provider="minimax", wait=False)
 print(f"Started: {resource.resource_id}")
 
 # ... do other work ...
@@ -85,6 +89,15 @@ video = client.create_video(
     provider="minimax",
 )
 print(video.url)
+```
+
+## Transcription
+
+`transcribe()` calls the canonical `analyze_media(analysis_type="transcribe")` surface and does not require a prompt:
+
+```python
+result = client.transcribe(video.resource_id, subtitle_formats=["srt", "vtt"])
+print(result.data)
 ```
 
 ## Low-level access

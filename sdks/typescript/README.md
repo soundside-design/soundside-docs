@@ -4,10 +4,18 @@ TypeScript SDK for the [Soundside](https://soundside.ai) AI media generation pla
 
 Zero dependencies — uses built-in `fetch` (Node 18+).
 
-## Install
+## Install from a local checkout
+
+This SDK is source-only. Soundside does not publish a tarball or registry package from this repository.
 
 ```bash
-npm install soundside
+git clone https://github.com/soundside-design/soundside-docs.git
+cd soundside-docs/sdks/typescript
+npm ci
+npm run build
+npm pack --pack-destination /tmp
+# In your consumer project:
+npm install /tmp/soundside-0.1.0.tgz
 ```
 
 ## Quickstart
@@ -18,7 +26,7 @@ import { Soundside } from "soundside";
 const client = new Soundside({ apiKey: "mcp_your_key_here" });
 
 // Generate an image (~4 credits / $0.04)
-const image = await client.createImage("A sunset over the ocean, cinematic lighting");
+const image = await client.createImage("A sunset over the ocean, cinematic lighting", { provider: "vertex" });
 console.log(image.url);
 
 // Generate a video (async — waits automatically, ~20-80 credits)
@@ -28,7 +36,7 @@ const video = await client.createVideo("Waves crashing on a rocky coastline", {
 console.log(video.url);
 
 // Generate text
-const result = await client.createText("Write a haiku about the ocean");
+const result = await client.createText("Write a haiku about the ocean", { provider: "vertex" });
 console.log(result.text);
 ```
 
@@ -40,10 +48,10 @@ Soundside exposes 19 MCP tools. The SDK has typed wrappers for the most common o
 
 | Method | What it does | Sync/Async |
 |--------|-------------|------------|
-| `createImage()` | Generate images from text | Sync |
+| `createImage()` | Generate images from text | Varies (Alibaba is pending) |
 | `createVideo()` | Generate video clips | Async (auto-waits) |
 | `createAudio()` | TTS, sound effects, voice cloning, voice design | Varies |
-| `createMusic()` | Generate music tracks | Async (auto-waits) |
+| `createMusic()` | Generate music tracks | Varies (auto-waits when pending) |
 | `createText()` | LLM text generation | Sync |
 | `createArtifact()` | Presentations, charts, documents, diagrams | Sync |
 | `editVideo()` | Video edits (trim, concat, crossfade, color_grade, ...) | Sync |
@@ -67,7 +75,7 @@ See `soundside-docs/guides/tools.md` for the full reference.
 By default, `createVideo()` and `createMusic()` wait for completion. Pass `wait: false` to get the resource ID immediately:
 
 ```ts
-const resource = await client.createVideo("A timelapse of clouds", { wait: false });
+const resource = await client.createVideo("A timelapse of clouds", { provider: "minimax", wait: false });
 console.log(`Started: ${resource.resourceId}`);
 
 // ... do other work ...
@@ -89,6 +97,15 @@ const video = await client.createVideo("The fox looks around curiously", {
   provider: "minimax",
 });
 console.log(video.url);
+```
+
+## Transcription
+
+`transcribe()` calls the canonical `analyze_media` transcription surface and does not require a prompt:
+
+```ts
+const transcript = await client.transcribe(video.resourceId, { subtitleFormats: ["srt", "vtt"] });
+console.log(transcript.data);
 ```
 
 ## Low-level access

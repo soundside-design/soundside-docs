@@ -25,7 +25,7 @@ class Soundside:
         from soundside import Soundside
 
         client = Soundside(api_key="mcp_your_key")
-        image = client.create_image("A sunset over the ocean")
+        image = client.create_image("A sunset over the ocean", provider="vertex")
         print(image.url)
     """
 
@@ -205,13 +205,12 @@ class Soundside:
         self,
         prompt: str,
         *,
-        provider: str | None = None,
+        provider: str,
         **kwargs: Any,
     ) -> Resource:
         """Generate an image. Returns a Resource with storage_url populated."""
         args: dict[str, Any] = {"prompt": prompt, **kwargs}
-        if provider:
-            args["provider"] = provider
+        args["provider"] = provider
         result = self.call_tool("create_image", args)
         res = result.resource
         if res is None:
@@ -222,7 +221,7 @@ class Soundside:
         self,
         prompt: str,
         *,
-        provider: str | None = None,
+        provider: str,
         first_frame: str | None = None,
         wait: bool = True,
         wait_timeout: int = 600,
@@ -230,8 +229,7 @@ class Soundside:
     ) -> Resource:
         """Generate a video. Async by default — waits for completion unless wait=False."""
         args: dict[str, Any] = {"prompt": prompt, **kwargs}
-        if provider:
-            args["provider"] = provider
+        args["provider"] = provider
         if first_frame:
             args["first_frame"] = first_frame
         result = self.call_tool("create_video", args)
@@ -246,14 +244,13 @@ class Soundside:
         self,
         prompt: str,
         *,
-        provider: str | None = None,
+        provider: str,
         mode: str = "tts",
         **kwargs: Any,
     ) -> Resource:
-        """Generate audio (TTS, sound effects, transcription)."""
+        """Generate audio (TTS, sound effects, and voice operations)."""
         args: dict[str, Any] = {"prompt": prompt, "mode": mode, **kwargs}
-        if provider:
-            args["provider"] = provider
+        args["provider"] = provider
         result = self.call_tool("create_audio", args)
         res = result.resource
         if res is None:
@@ -265,7 +262,7 @@ class Soundside:
         prompt: str,
         *,
         lyrics: str | None = None,
-        provider: str | None = None,
+        provider: str,
         wait: bool = True,
         wait_timeout: int = 300,
         **kwargs: Any,
@@ -274,8 +271,7 @@ class Soundside:
         args: dict[str, Any] = {"prompt": prompt, **kwargs}
         if lyrics:
             args["lyrics"] = lyrics
-        if provider:
-            args["provider"] = provider
+        args["provider"] = provider
         result = self.call_tool("create_music", args)
         res = result.resource
         if res is None:
@@ -299,20 +295,39 @@ class Soundside:
 
     def create_artifact(
         self,
-        artifact_type: str,
-        *,
-        content: dict[str, Any] | None = None,
+        type: str,
         **kwargs: Any,
     ) -> Resource:
         """Create a business artifact (presentation, chart, document, diagram)."""
-        args: dict[str, Any] = {"artifact_type": artifact_type, **kwargs}
-        if content:
-            args["content"] = content
+        args: dict[str, Any] = {"type": type, **kwargs}
         result = self.call_tool("create_artifact", args)
         res = result.resource
         if res is None:
             raise SoundsideError(f"No resource_id in response: {result.data}")
         return self._ensure_url(res)
+
+    def transcribe(
+        self,
+        resource_id: str,
+        *,
+        language_code: str = "en-US",
+        include_word_timestamps: bool = True,
+        enable_diarization: bool = False,
+        enable_silence_detection: bool = False,
+        silence_threshold_sec: float = 1.0,
+        subtitle_formats: list[str] | None = None,
+    ) -> ToolResult:
+        """Transcribe media through the canonical analyze_media surface."""
+        return self.call_tool("analyze_media", {
+            "resource_id": resource_id,
+            "analysis_type": "transcribe",
+            "language_code": language_code,
+            "include_word_timestamps": include_word_timestamps,
+            "enable_diarization": enable_diarization,
+            "enable_silence_detection": enable_silence_detection,
+            "silence_threshold_sec": silence_threshold_sec,
+            "subtitle_formats": subtitle_formats,
+        })
 
     def edit_video(
         self,

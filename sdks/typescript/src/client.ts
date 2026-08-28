@@ -34,7 +34,7 @@ export class Soundside {
    * @example
    * ```ts
    * const client = new Soundside({ apiKey: "mcp_your_key" });
-   * const image = await client.createImage("A sunset over the ocean");
+   * const image = await client.createImage("A sunset over the ocean", { provider: "vertex" });
    * console.log(image.url);
    * ```
    */
@@ -256,11 +256,11 @@ export class Soundside {
   /** Generate an image. Returns a Resource with storageUrl populated. */
   async createImage(
     prompt: string,
-    options?: { provider?: string; [key: string]: unknown },
+    options: { provider: string; [key: string]: unknown },
   ): Promise<Resource> {
-    const { provider, ...rest } = options ?? {};
+    const { provider, ...rest } = options;
     const args: Record<string, unknown> = { prompt, ...rest };
-    if (provider) args.provider = provider;
+    args.provider = provider;
     const result = await this.callTool("create_image", args);
     if (!result.resource) {
       throw new SoundsideError(`No resource_id in response: ${JSON.stringify(result.data)}`);
@@ -271,17 +271,17 @@ export class Soundside {
   /** Generate a video. Async — waits for completion unless wait=false. */
   async createVideo(
     prompt: string,
-    options?: {
-      provider?: string;
+    options: {
+      provider: string;
       firstFrame?: string;
       wait?: boolean;
       waitTimeout?: number;
       [key: string]: unknown;
     },
   ): Promise<Resource> {
-    const { provider, firstFrame, wait = true, waitTimeout = 600_000, ...rest } = options ?? {};
+    const { provider, firstFrame, wait = true, waitTimeout = 600_000, ...rest } = options;
     const args: Record<string, unknown> = { prompt, ...rest };
-    if (provider) args.provider = provider;
+    args.provider = provider;
     if (firstFrame) args.first_frame = firstFrame;
     const result = await this.callTool("create_video", args);
     if (!result.resource) {
@@ -293,14 +293,14 @@ export class Soundside {
     return result.resource;
   }
 
-  /** Generate audio (TTS, sound effects, transcription). */
+  /** Generate audio (TTS, sound effects, and voice operations). */
   async createAudio(
     prompt: string,
-    options?: { provider?: string; mode?: string; [key: string]: unknown },
+    options: { provider: string; mode?: string; [key: string]: unknown },
   ): Promise<Resource> {
-    const { provider, mode = "tts", ...rest } = options ?? {};
+    const { provider, mode = "tts", ...rest } = options;
     const args: Record<string, unknown> = { prompt, mode, ...rest };
-    if (provider) args.provider = provider;
+    args.provider = provider;
     const result = await this.callTool("create_audio", args);
     if (!result.resource) {
       throw new SoundsideError(`No resource_id in response: ${JSON.stringify(result.data)}`);
@@ -311,18 +311,18 @@ export class Soundside {
   /** Generate a music track. Async — waits for completion unless wait=false. */
   async createMusic(
     prompt: string,
-    options?: {
+    options: {
       lyrics?: string;
-      provider?: string;
+      provider: string;
       wait?: boolean;
       waitTimeout?: number;
       [key: string]: unknown;
     },
   ): Promise<Resource> {
-    const { lyrics, provider, wait = true, waitTimeout = 300_000, ...rest } = options ?? {};
+    const { lyrics, provider, wait = true, waitTimeout = 300_000, ...rest } = options;
     const args: Record<string, unknown> = { prompt, ...rest };
     if (lyrics) args.lyrics = lyrics;
-    if (provider) args.provider = provider;
+    args.provider = provider;
     const result = await this.callTool("create_music", args);
     if (!result.resource) {
       throw new SoundsideError(`No resource_id in response: ${JSON.stringify(result.data)}`);
@@ -346,17 +346,39 @@ export class Soundside {
 
   /** Create a business artifact (presentation, chart, document, diagram). */
   async createArtifact(
-    artifactType: string,
-    options?: { content?: Record<string, unknown>; [key: string]: unknown },
+    type: "presentation" | "chart" | "document" | "diagram",
+    options: Record<string, unknown> = {},
   ): Promise<Resource> {
-    const { content, ...rest } = options ?? {};
-    const args: Record<string, unknown> = { artifact_type: artifactType, ...rest };
-    if (content) args.content = content;
+    const args: Record<string, unknown> = { type, ...options };
     const result = await this.callTool("create_artifact", args);
     if (!result.resource) {
       throw new SoundsideError(`No resource_id in response: ${JSON.stringify(result.data)}`);
     }
     return this.ensureUrl(result.resource);
+  }
+
+  /** Transcribe media through the canonical analyze_media surface. */
+  async transcribe(
+    resourceId: string,
+    options: {
+      languageCode?: string;
+      includeWordTimestamps?: boolean;
+      enableDiarization?: boolean;
+      enableSilenceDetection?: boolean;
+      silenceThresholdSec?: number;
+      subtitleFormats?: Array<"srt" | "vtt">;
+    } = {},
+  ): Promise<ToolResult> {
+    return this.callTool("analyze_media", {
+      resource_id: resourceId,
+      analysis_type: "transcribe",
+      language_code: options.languageCode ?? "en-US",
+      include_word_timestamps: options.includeWordTimestamps ?? true,
+      enable_diarization: options.enableDiarization ?? false,
+      enable_silence_detection: options.enableSilenceDetection ?? false,
+      silence_threshold_sec: options.silenceThresholdSec ?? 1.0,
+      subtitle_formats: options.subtitleFormats,
+    });
   }
 
   /** Apply a core editing action (trim, concat, crossfade, adjust_speed, loop, color_grade, custom, burn_subtitles). */

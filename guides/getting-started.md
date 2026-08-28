@@ -81,8 +81,6 @@ Returns a `resource_id` immediately. The video generates in the background — S
 }}
 ```
 
-> **MCP Tasks (2025-11-25):** Clients that support the `tasks` capability can also track async operations via `tasks/get` and `tasks/list`. The tool result will include a `resource_link` content block with the resource URI for convenient access.
-
 ### Edit Media
 
 ```json
@@ -117,7 +115,7 @@ Returns a score (0-1), pass/fail, and detailed issues/suggestions.
 
 ## 5. Provider Selection
 
-Each generation tool supports multiple AI providers. If you don't specify one, Soundside picks a default.
+Follow each live schema. `create_image`, `create_video`, `create_audio`, and `create_music` require an explicit provider; `create_text` defaults to Vertex, and `create_artifact` routes primarily by artifact type.
 
 | Use Case | Recommended Provider | Why |
 |----------|---------------------|-----|
@@ -128,7 +126,7 @@ Each generation tool supports multiple AI providers. If you don't specify one, S
 | Cheapest images | `minimax` ($0.04) / `alibaba` ($0.05) / `vertex` ($0.08) | |
 | Text-to-speech | `minimax` or `grok` | MiniMax: multiple voices, voice cloning. Grok: 26 multilingual voices, sync |
 | Transcription (STT) | `vertex` | EN-US, word-level timestamps |
-| Music generation | `lyria` (Lyria 3) or `minimax` | Lyria is sync; MiniMax is async (Creative Freedom is API-key-only) |
+| Music generation | `lyria` (Lyria 3) | Lyria is sync; Creative Freedom is authenticated-credit only and async |
 | LLM text | `vertex` (Gemini) | General purpose |
 | Vision QA over video | `vertex` (Gemini 2.5 Pro, default) or `qwen` | Also: `anthropic`, `grok`, `openai` |
 
@@ -136,21 +134,14 @@ Each generation tool supports multiple AI providers. If you don't specify one, S
 
 | Behavior | Tools |
 |----------|-------|
-| **Sync** — result in response | `create_image` (alibaba, grok, minimax, vertex), `create_text`, `create_audio` (grok, vertex), `create_music` (lyria), `create_artifact`, `edit_video`, `compose_media`, `edit_audio`, `apply_effect`, `extract_media`, `analyze_media` (technical/vision_qa/export_edl), `list_adapters`, `manage_adapter`, `lib_*` |
-| **Async** — returns `resource_id`, completes later | `create_video` (all providers), `create_music` (minimax), `compose_video`, `create_audio` (minimax, runway), `analyze_media` (transcribe/detect_segments on long inputs), `train_adapter` |
+| **Sync** — final result in response | `create_image` (creative_freedom, grok, minimax, vertex), `create_text`, `create_audio` (grok, vertex), `create_music` (lyria), `create_artifact`, editing tools, all `analyze_media` modes, `list_adapters`, and library tools |
+| **Pending** — returns a resource that completes later | `create_video` (all providers), `create_image` (alibaba), `create_music` (creative_freedom), `compose_video`, `create_audio` (minimax/runway and provider-dependent Creative Freedom modes), `train_adapter`, and `manage_adapter` deploy/undeploy operations |
 
-For async tools, listen for MCP `notifications/resources/updated`, poll with `lib_list`, or use MCP tasks (see below).
+For async tools, listen for MCP `notifications/resources/updated` or recover state with `lib_list`. Public task/hold/resume guarantees are not part of the current contract.
 
-## 7. MCP Tasks (Advanced)
+## 7. Async recovery
 
-Soundside supports MCP **tasks** for tracking async operations. Clients that declare the `tasks` capability during `initialize` get structured progress tracking:
-
-- Tools like `create_video` declare `execution.taskSupport = "optional"`
-- Tool results include `resource_link` content blocks with `soundside://resources/{id}` URIs
-- Use `tasks/get` to poll status: `working` → `completed` or `failed`
-- Use `tasks/list` to see all active tasks
-
-Most clients (Claude, OpenClaw, etc.) handle tasks automatically. For raw HTTP usage, you can continue using `lib_list` polling.
+Keep the returned `resource_id`. Completion/failure is pushed while connected; after a reconnect or session loss, call `lib_list(entity_type="resources", resource_ids=[...])` to recover current state.
 
 ## 8. Tool Result Format
 

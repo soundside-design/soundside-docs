@@ -20,7 +20,7 @@ Complete reference for all 19 Soundside MCP tools. Always call `tools/list` at r
 
 Generate images from text prompts. Supports character references for consistent characters across generations.
 
-**Providers:** `alibaba` (Wan), `grok`, `minimax`, `vertex` (Gemini)
+**Providers:** `alibaba` (Wan), `grok`, `minimax`, `vertex` (Gemini), and authenticated-credit-only `creative_freedom`. Vertex is text-to-image only; reference/edit support is provider-specific.
 
 | Parameter | Required | Type | Description |
 |-----------|----------|------|-------------|
@@ -62,7 +62,7 @@ Generate images from text prompts. Supports character references for consistent 
 
 Generate video from text prompt or image. Supports text-to-video, image-to-video (via `first_frame`), video extension, and character references.
 
-**Providers:** `alibaba` (Wan 2.7), `grok`, `minimax` (Hailuo/H3), `vertex` (Veo 3.1)
+**Providers:** `alibaba` (Wan 2.7), `grok`, `minimax` (Hailuo/H3), `vertex` (Veo 3.1), and authenticated-credit-only `creative_freedom`. Creative Freedom is text-to-video only; other operations vary by provider.
 
 All providers are **async** — returns a `resource_id` immediately, completes in background.
 
@@ -129,7 +129,7 @@ All providers are **async** — returns a `resource_id` immediately, completes i
 
 Create audio content. Supports multiple modes: TTS, sound effects, voice cloning, voice design, and voice listing.
 
-**Providers (x402 + API key):** `grok` (TTS), `minimax`, `runway` (TTS + sound effects), `vertex`.
+**Providers (x402 + authenticated credits):** `grok` (TTS), `minimax`, `runway` (TTS + sound effects), `vertex`. Authenticated-credit-only `creative_freedom` supports TTS + sound effects.
 **Additionally via API key only:** `creative_freedom` (self-hosted CosyVoice on Modal).
 
 Runway is audio-only — it no longer generates images or video. Grok TTS is sync and supports 26 multilingual voices (list them with `mode: "list_voices"`).
@@ -196,32 +196,18 @@ Use `analyze_media(analysis_type="transcribe")` for the canonical STT surface. `
 
 Generate music from lyrics and a style prompt.
 
-**Providers:** `minimax`, `lyria` (Lyria 3)
+**Providers:** `lyria` (Lyria 3, synchronous) and `creative_freedom` (authenticated-credit only, asynchronous). MiniMax music is unavailable and is rejected by the public schema.
 
 | Parameter | Required | Type | Description |
 |-----------|----------|------|-------------|
-| `provider` | yes | string | `minimax` or `lyria` |
+| `provider` | yes | string | `lyria` or `creative_freedom` |
 | `lyrics` | no | string | Song lyrics (can be empty for instrumental) |
 | `prompt` | no | string | Style/genre description |
-| `refer_voice` | no | string | _(Deprecated — use `reference_audio_resource_id` with `reference_audio_purpose: "voice"`)_ Reference voice URL |
-| `refer_instrumental` | no | string | _(Deprecated — use `reference_audio_resource_id` with `reference_audio_purpose: "instrumental"`)_ Reference instrumental URL |
 | `reference_audio_resource_id` | no | string | Resource ID for reference audio |
 | `reference_audio_purpose` | no | string | `song`, `voice`, or `instrumental` |
 | `format` | no | string | Output: `mp3`, `wav`, `pcm` |
 
-**Async** on `minimax` — returns `resource_id`, completes in background. `lyria` is sync (result in response).
-
-**Example — MiniMax:**
-```json
-{
-  "name": "create_music",
-  "arguments": {
-    "provider": "minimax",
-    "lyrics": "[verse]\nSunlight through the trees\nA fox runs wild and free\n[chorus]\nEvery path leads home",
-    "prompt": "Gentle folk acoustic, warm and uplifting, children's story soundtrack"
-  }
-}
-```
+Creative Freedom returns a pending resource and completes in the background. Lyria returns the result synchronously.
 
 **Example — Lyria 3:**
 ```json
@@ -272,7 +258,7 @@ Generate text using LLM chat completions. Supports structured JSON output.
 
 Create business artifacts: presentations, charts, documents, or diagrams. Supports a **bundle mode** for generating multiple related artifacts from a single brief (e.g., a slide deck + chart + document in one call).
 
-**Providers:** Local rendering (default: PPTX, Plotly, WeasyPrint, Mermaid) or `gamma` for AI-generated presentations.
+**Providers / implementations:** Local rendering (PPTX, Plotly, DOCX, WeasyPrint, Mermaid) or `gamma` for AI-generated presentations.
 
 | Parameter | Required | Type | Description |
 |-----------|----------|------|-------------|
@@ -816,16 +802,26 @@ Share projects with other users. **Manages access permissions only — does not 
 
 ## compose_video
 
-Server-side video composition pipeline. Accepts a composition plan (sparse brief or detailed timeline), enriches it via Gemini, generates assets in parallel across providers, and assembles via FFmpeg with crossfades, audio ducking, and text overlays. **Use this when you want a finished video from a script; use `create_video` + `edit_video` when you need manual control.**
+Server-side, asynchronous video composition pipeline. It accepts a recursively strict sparse or detailed timeline, validates it before side effects, enriches gaps, generates Grok visuals with MiniMax narration and Lyria music, and assembles a final resource. **Use this when you want a finished video from a plan; use individual generation/editing tools when you need manual control.**
+
+The production default is `quality_profile="stable"`. The only public visual-generation provider is Grok; narration uses MiniMax and generated music uses Lyria. `frontier` is an explicit experimental/high-cost, all-Grok visual candidate profile; it does not unlock other visual providers.
+
+Fixed generated-audio fanout is profile-owned, not caller-selectable: stable creates two MiniMax narration candidates and two Lyria music candidates; frontier creates three of each. Every missing explicit-cast reference creates exactly one Grok image candidate. Compose uses one Generate→Evaluate→Select round and one narration-transcription attempt. Planning/text judges, media judges, transcription, storage, and deterministic rendering are implementation dependencies, not alternative output providers.
 
 | Parameter | Required | Type | Description |
 |-----------|----------|------|-------------|
-| `plan` | yes | object | Composition plan (brief + segments, or detailed timeline). See spec. |
+| `plan` | yes | object | Strict `CompositionPlan`: a sparse `brief`, a detailed `segments` timeline, or both. Unknown keys are rejected recursively. |
+| `reuse_segments` | no | object | Segment index → owned resource UUID for surgical revision/reuse. |
+| `parent_resource_id` / `reuse_from` | no | string | Owned parent composition UUID for checkpoint-based reassembly. |
 | `project_id` | no | string | Library project UUID. If omitted, a project is auto-created. |
 | `collection_id` | no | string | Library collection UUID. |
-| `advanced_options` | no | object | Pipeline-level overrides (visual/narration provider defaults, QA thresholds, etc.). |
+| `quality_profile` | no | string | `stable` (default) or explicit `frontier`; both are Grok-only for visual generation. |
+| `qa`, `qa_policy`, `allow_degraded_output` | no | varies | Intermediate and mechanical checks always fail closed. Advisory degradation can publish only a complete, non-vetoed final semantic panel that misses its score, labeled `verified_degraded`. |
+| `reassemble_only` | no | boolean | Rebuild from a complete reuse map or an owned parent checkpoint without regenerating segments. |
 
-**Pricing:** the $0.05 (5-credit) catalog price is the orchestration fee only; the 402 challenge quotes this fee plus the generation calls the submitted plan requires, priced per request. Each generated asset bills individually through the underlying tools — long videos trigger many paid sub-calls.
+**Pricing and access:** Compose requires OAuth or API-key credits and is absent from x402 discovery/quotes. A successful root adds a five-credit orchestration fee; child generation, evaluation, and editing calls are separately itemized. Failed roots do not pay the orchestration fee.
+
+The initial response is `pending` with a parent `resource_id`. Completion/failure is pushed through `notifications/resources/updated`; after reconnecting, recover the parent and children with `lib_list`. Duration and cost estimates are planning estimates, not an SLA.
 
 **Example — brief + narration:**
 ```json
@@ -833,18 +829,42 @@ Server-side video composition pipeline. Accepts a composition plan (sparse brief
   "name": "compose_video",
   "arguments": {
     "plan": {
-      "brief": "A 30-second explainer about how bees pollinate flowers, warm naturalistic style, a kind narrator voice",
-      "duration_sec": 30
-    }
+      "brief": "A concise explainer about how bees pollinate flowers, warm naturalistic style, kind narration"
+    },
+    "quality_profile": "stable"
   }
 }
 ```
+
+**Example — detailed Grok timeline:**
+```json
+{
+  "name": "compose_video",
+  "arguments": {
+    "plan": {
+      "title": "Pollination",
+      "brief": "A warm natural-history explainer",
+      "segments": [
+        {"type": "video", "provider": "grok", "prompt": "Macro shot of a bee landing on a sunflower", "duration_sec": 6},
+        {"type": "video", "provider": "grok", "prompt": "Pollen clings to the bee as it visits another flower", "duration_sec": 6}
+      ]
+    },
+    "quality_profile": "stable"
+  }
+}
+```
+
+All media references must be authorized Soundside resource UUIDs. Public Compose does not accept media URLs, top-level `duration_sec`, nested `advanced_options`, non-Grok segment providers, public autonomy/tasks fields, or a hold/resume promise. Reuse supports complete parent reassembly and surgical revision; it does not weaken resource ownership checks.
+
+Reference generation is explicit-cast-only: Compose does not discover or invent cast members with a provider call. Cast voice namespaces are split: `narration_voice_id` selects a closed MiniMax voice for generated dialogue, while `native_video_voice_id` selects a closed Grok voice for native video speech; legacy `cast.voice_id` is rejected. Narration is bounded to 12,000 Unicode code points total, 2,000 per per-segment entry, and at most 15 unique in-range segment entries.
+
+Reassembly has two exact shapes. Pass exactly one of `parent_resource_id` or `reuse_from` with `reassemble_only=true`, `plan={}`, and no `reuse_segments`; or pass a detailed plan and an exact all-index reuse map. Ordinary surgical revision sets `reassemble_only=false` and may reuse only a proper subset; empty means ordinary regeneration, while a full map must use reassembly.
 
 ---
 
 ## train_adapter
 
-Train a LoRA adapter (character or style) from library media.
+Train a LoRA adapter (`character`, `style`, `effect`, or `transition`) from library media.
 
 **Backends:**
 - `dashscope` — Alibaba Wan LoRAs (wan2.1-t2v, wan2.2-t2v, etc.) — hosted training, fastest turnaround.
@@ -853,13 +873,13 @@ Train a LoRA adapter (character or style) from library media.
 | Parameter | Required | Type | Description |
 |-----------|----------|------|-------------|
 | `name` | yes | string | Adapter display name |
-| `base_model` | yes | string | Base model identifier (provider-specific) |
+| `adapter_type` | yes | string | `character`, `style`, `effect`, or `transition` |
 | `training_data` | yes | array | Each item: `{ first_frame_resource_id, video_resource_id, caption }`. `kf2v` also needs `last_frame_resource_id`. |
+| `base_model` | no | string | Base model identifier (defaults to `wan2.6-i2v`) |
 | `backend` | no | string | `dashscope` (default) or `modal` |
-| `epochs` | no | number | Training epochs (defaults vary by backend) |
-| `advanced_options` | no | object | Backend-specific knobs |
+| `hyper_parameters` | no | object | Backend-specific training parameters |
 
-**Async.** Returns a pending resource_id; poll via `list_adapters` or `manage_adapter(operation="inspect")`.
+**Async.** Returns a pending resource_id; recover via `list_adapters` or `manage_adapter(action="inspect")`.
 
 ---
 
@@ -869,10 +889,9 @@ List LoRA adapters mirrored into the Soundside library.
 
 | Parameter | Required | Type | Description |
 |-----------|----------|------|-------------|
-| `status_filter` | no | string | `training`, `ready`, `deployed`, `failed` |
-| `backend_filter` | no | string | `dashscope`, `modal` |
-
-Free tool — no credits deducted.
+| `project_id` | no | string | Project UUID filter |
+| `status` | no | string | `uploading`, `training`, `selecting`, `deploying`, `deployed`, `undeploying`, `undeployed`, or `failed` |
+| `adapter_type` | no | string | `character`, `style`, `effect`, or `transition` |
 
 ---
 
@@ -883,9 +902,9 @@ Manage an adapter's lifecycle: inspect, deploy, undeploy, delete, or select a sp
 | Parameter | Required | Type | Description |
 |-----------|----------|------|-------------|
 | `adapter_id` | yes | string | Adapter resource UUID |
-| `operation` | yes | string | `inspect`, `deploy`, `undeploy`, `delete`, `select_checkpoint` |
+| `action` | yes | string | `inspect`, `deploy`, `undeploy`, `delete`, `select_checkpoint` |
 | `checkpoint` | no | number/string | Checkpoint index or name (for `select_checkpoint`) |
 
-Free tool — underlying provider operations may incur provider-side costs (e.g. DashScope deploy fee at first use).
+`manage_adapter` is mixed: inspect/delete are synchronous while deploy, undeploy, and checkpoint selection can return pending.
 
-**Inference usage:** once deployed, pass the adapter's `lora_id` (or resource_id) via `advanced_options.adapters: [{ id, weight }]` to `create_image` or `create_video`.
+**Inference usage:** adapters are video-only. Pass deployed adapter resource UUIDs through top-level `adapter_ids` (or deprecated singular `adapter_id`) to `create_video`. Image-adapter inference and `advanced_options.adapters` are not supported.
