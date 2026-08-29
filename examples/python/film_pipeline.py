@@ -78,7 +78,7 @@ def main():
     narr = client.call("create_audio", {
         "provider": "minimax",
         "mode": "tts",
-        "text": "In a quiet forest, a small fox named Felix woke with the sunrise. "
+        "prompt": "In a quiet forest, a small fox named Felix woke with the sunrise. "
                 "Today would be his greatest adventure yet.",
     })
     narr_id = narr["resource_id"]

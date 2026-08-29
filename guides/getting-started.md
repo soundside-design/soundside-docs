@@ -128,7 +128,7 @@ Follow each live schema. `create_image`, `create_video`, `create_audio`, and `cr
 | Transcription (STT) | `vertex` | EN-US, word-level timestamps |
 | Music generation | `lyria` (Lyria 3) | Lyria is sync; Creative Freedom is authenticated-credit only and async |
 | LLM text | `vertex` (Gemini) | General purpose |
-| Vision QA over video | `vertex` (Gemini 2.5 Pro, default) or `qwen` | Also: `anthropic`, `grok`, `openai` |
+| Vision QA over video | `vertex` (Gemini 3.1 Pro Preview, default for video; Gemini 3.7 Flash for images) or `qwen` | Also: `anthropic`, `grok`, `openai` |
 
 ## 6. Sync vs Async
 

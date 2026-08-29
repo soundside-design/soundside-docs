@@ -154,7 +154,7 @@ Chain operations by passing `resource_id` from one step to the next. Every resou
 3. Poll: lib_list(entity_type="resources", resource_id=video_id)
    → Wait until status="completed" and url is present
 
-4. create_audio(provider="minimax", mode="tts", text="In a quiet forest...")
+4. create_audio(provider="minimax", mode="tts", prompt="In a quiet forest...")
    → narration_id (sync, immediately ready)
 
 5. edit_audio(resource_id=video_id, action="mix_audio", audio_source=narration_id)

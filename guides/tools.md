@@ -66,7 +66,7 @@ Generate video from text prompt or image. Supports text-to-video, image-to-video
 
 All providers are **async** — returns a `resource_id` immediately, completes in background.
 
-**x402 amounts are ceiling quotes:** the catalog publishes the worst case, not the typical settled price. `alibaba` publishes a $24 reservation ceiling, but the actual 402 challenge quotes the metered per-second price for the requested duration and resolution; a default `grok` text-to-video (8s, 720p) quotes $1.12 against the $3.82 ceiling; `minimax` runs from $0.28 (H3 is metered up to the $1.95 ceiling); `vertex` from $1.60 against a $2.64 ceiling.
+**x402 amounts are ceiling quotes:** the catalog publishes the worst case, not the typical settled price. `alibaba` publishes a $24 reservation ceiling, but the actual 402 challenge quotes the metered per-second price for the requested duration and resolution; a default `grok` text-to-video (8s, 720p) quotes $1.12 against the $3.82 ceiling; `minimax` runs from $0.28 (H3 is metered up to the $1.95 ceiling); `vertex` from $1.60 against a $3.20 ceiling.
 
 | Parameter | Required | Type | Description |
 |-----------|----------|------|-------------|
@@ -139,7 +139,6 @@ Runway is audio-only — it no longer generates images or video. Grok TTS is syn
 | `provider` | yes | string | AI provider |
 | `mode` | no | string | `tts` (default), `sound_effect`, `transcribe` _(deprecated compatibility shim)_, `voice_clone`, `voice_design`, `list_voices` |
 | `prompt` | no | string | Text for TTS speech or sound effect description |
-| `text` | no | string | _(Deprecated — use `prompt`)_ Backward-compatible alias for `prompt` |
 | `voice_id` | no | string | Voice ID (default: `Calm_Woman` for MiniMax, `en-US-Chirp3-HD-Aoede` for Vertex) |
 | `source` | no | string | Resource ID or URL of audio/video to transcribe |
 | `language_code` | no | string | Language for transcription (default: `en-US`, v1 supports EN-US only) |
@@ -533,7 +532,7 @@ Analyze media for technical properties, reusable transcript artifacts, rough-cut
 
 **Analysis types:**
 - `technical` (default) — Duration, resolution, codecs, bitrate via ffprobe
-- `vision_qa` — AI evaluation. Default provider `vertex` uses **Gemini 2.5 Pro** (for video) or Gemini 2.5 Flash (images). Scores prompt adherence, motion quality, temporal coherence, plus audio content analysis (narration overlap, audio artifacts, what's heard)
+- `vision_qa` — AI evaluation. Default provider `vertex` uses **Gemini 3.1 Pro Preview** (for video) or Gemini 3.7 Flash (images). Scores prompt adherence, motion quality, temporal coherence, plus audio content analysis (narration overlap, audio artifacts, what's heard)
 - `transcribe` — Canonical STT surface. Persists transcript JSON plus optional SRT/VTT sidecars
 - `detect_segments` — Transcript-guided keep-range detection for rough cuts
 - `export_edl` — Export persisted or inline keep-ranges as a CMX 3600 EDL
