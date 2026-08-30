@@ -776,7 +776,7 @@
       "train_adapter"
     ]
   },
-  "tool_schema_sha256": "32270084945d0271ad1665b6f5cf70c78cb30d2e7d24176898aa316d826752d5",
+  "tool_schema_sha256": "f05118bfc57677cc545e175dad5541ad5c5361fc75907e368bf04e1f10a06ce5",
   "tools": [
     {
       "annotations": {
@@ -2091,7 +2091,7 @@
         "title": "Compose Video"
       },
       "category": "composition",
-      "description": "Compose a complete video from a timeline plan.\n\nAccepts a plan (sparse brief or detailed timeline), enriches it, generates assets in parallel, and assembles with transitions, audio mix, and overlays. Auto-creates a project/collection if none provided.\n\nPlans: minimal (just brief+style), moderate (segment outlines), or detailed (providers, prompts, timing). Server fills gaps.\n\nAsync: returns pending resource_id. Poll with lib_list or await MCP notification.\n\nRevision: pass reuse_segments mapping indices to prior resource_ids (from metadata.composition.segment_resources). Only changed segments regenerate.\n\nRevise (sugar): pass revise_from=<parent composition UUID> with plan={} and regenerate=[indices]. The server rebuilds the plan and reuse map from the parent's durable checkpoint (owner-only): every segment NOT listed in regenerate reuses the parent's clip, and the parent's monolithic narration/music carry over as supplied audio. Optional segment_overrides edits regenerated segments (prompt, duration_sec, motion_intensity, camera_position). The manual reuse_segments path above remains the low-level alternative.\n\nReassemble-only: set reassemble_only=true with ALL segment IDs in reuse_segments and the prior enriched timeline as plan. Skips planning/generation and runs the same assembly+QA publication gate.\n",
+      "description": "Compose a complete video from a timeline plan.\n\nAccepts a plan (sparse brief or detailed timeline), enriches it, generates assets in parallel, and assembles with transitions, audio mix, and overlays. Auto-creates a project/collection if none provided.\n\nPlans: minimal (just brief+style), moderate (segment outlines), or detailed (providers, prompts, timing). Server fills gaps.\n\nAsync: returns pending resource_id. Poll with lib_list or await MCP notification.\n\nRevision: pass reuse_segments mapping indices to prior resource_ids (from metadata.composition.segment_resources). Only changed segments regenerate.\n\nRevise (sugar): pass revise_from=<parent composition UUID> with plan={} and regenerate=[indices]. The server rebuilds the plan and reuse map from the parent's durable checkpoint (owner-only): every segment NOT listed in regenerate reuses the parent's clip, and the parent's monolithic narration/music carry over as supplied audio. regenerate=[] (or omitted) re-assembles the parent as-is — every segment reuses, carried audio, full QA + publication; this is the recovery path for a FAILED own parent whose segments all completed. Optional segment_overrides edits regenerated segments (prompt, duration_sec, motion_intensity, camera_position) and requires a non-empty regenerate. The manual reuse_segments path above remains the low-level alternative.\n\nReassemble-only: set reassemble_only=true with ALL segment IDs in reuse_segments and the prior enriched timeline as plan. Skips planning/generation and runs the same assembly+QA publication gate.\n",
       "execution": "pending",
       "inputSchema": {
         "$defs": {
@@ -3848,7 +3848,7 @@
               }
             ],
             "default": null,
-            "description": "Segment indices (0-based, unique, within the parent's timeline) to regenerate. Required with revise_from; must be non-empty (for zero regeneration use reassemble_only with parent_resource_id). Validated against the parent's checkpointed segment count before any charge.",
+            "description": "Segment indices (0-based, unique, within the parent's timeline) to regenerate. Only with revise_from. Empty or omitted means pure re-assembly: every parent segment is reused (zero generation), carried audio, full QA + publication — the recovery path for a failed own parent whose segments all completed. Validated against the parent's checkpointed segment count before any charge.",
             "title": "Regenerate"
           },
           "reuse_from": {
@@ -3890,7 +3890,7 @@
               }
             ],
             "default": null,
-            "description": "Parent composition resource UUID to revise. Owner-only. The server reconstructs the plan and reuse map from the parent's durable checkpoint: every segment NOT listed in `regenerate` reuses the parent's clip; the parent's monolithic narration and music carry over as supplied audio. Requires plan={} and regenerate. Mutually exclusive with parent_resource_id/reuse_from, reuse_segments, and reassemble_only.",
+            "description": "Parent composition resource UUID to revise. Owner-only. The server reconstructs the plan and reuse map from the parent's durable checkpoint: every segment NOT listed in `regenerate` reuses the parent's clip; the parent's monolithic narration and music carry over as supplied audio. Requires plan={}; regenerate is optional (empty/omitted = pure re-assembly of the parent, including a failed one whose segments completed). Mutually exclusive with parent_resource_id/reuse_from, reuse_segments, and reassemble_only.",
             "title": "Revise From"
           },
           "segment_overrides": {
@@ -3906,7 +3906,7 @@
               }
             ],
             "default": null,
-            "description": "Per-segment edits, keyed by canonical index string; keys must be listed in regenerate. Allowed keys per override: prompt, duration_sec, motion_intensity, camera_position. Unknown keys are rejected (strict plans). Requires revise_from.",
+            "description": "Per-segment edits, keyed by canonical index string; keys must be listed in regenerate. Allowed keys per override: prompt, duration_sec, motion_intensity, camera_position. Unknown keys are rejected (strict plans). Requires revise_from and a non-empty regenerate.",
             "title": "Segment Overrides"
           },
           "tags": {
