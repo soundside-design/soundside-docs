@@ -812,6 +812,9 @@ Fixed generated-audio fanout is profile-owned, not caller-selectable: stable cre
 | `plan` | yes | object | Strict `CompositionPlan`: a sparse `brief`, a detailed `segments` timeline, or both. Unknown keys are rejected recursively. |
 | `reuse_segments` | no | object | Segment index → owned resource UUID for surgical revision/reuse. |
 | `parent_resource_id` / `reuse_from` | no | string | Owned parent composition UUID for checkpoint-based reassembly. |
+| `revise_from` | no | string | Owned parent composition UUID to revise. The server reconstructs the plan and reuse map from the parent's durable checkpoint; requires `plan={}` and `regenerate`, and is mutually exclusive with `parent_resource_id`/`reuse_from`, `reuse_segments`, and `reassemble_only`. |
+| `regenerate` | no | array | 0-based, unique segment indices within the parent's timeline to regenerate with `revise_from`. Must be non-empty; validated against the parent's checkpointed segment count before any charge. |
+| `segment_overrides` | no | object | Per-segment edits keyed by canonical index string; keys must appear in `regenerate`. Allowed keys per override: `prompt`, `duration_sec`, `motion_intensity`, `camera_position`; unknown keys are rejected. |
 | `project_id` | no | string | Library project UUID. If omitted, a project is auto-created. |
 | `collection_id` | no | string | Library collection UUID. |
 | `quality_profile` | no | string | `stable` (default) or explicit `frontier`; both are Grok-only for visual generation. |
@@ -858,6 +861,8 @@ All media references must be authorized Soundside resource UUIDs. Public Compose
 Reference generation is explicit-cast-only: Compose does not discover or invent cast members with a provider call. Cast voice namespaces are split: `narration_voice_id` selects a closed MiniMax voice for generated dialogue, while `native_video_voice_id` selects a closed Grok voice for native video speech; legacy `cast.voice_id` is rejected. Narration is bounded to 12,000 Unicode code points total, 2,000 per per-segment entry, and at most 15 unique in-range segment entries.
 
 Reassembly has two exact shapes. Pass exactly one of `parent_resource_id` or `reuse_from` with `reassemble_only=true`, `plan={}`, and no `reuse_segments`; or pass a detailed plan and an exact all-index reuse map. Ordinary surgical revision sets `reassemble_only=false` and may reuse only a proper subset; empty means ordinary regeneration, while a full map must use reassembly.
+
+Revision has a server-reconstructed shortcut alongside those manual shapes: pass `revise_from=<parent UUID>` with `plan={}` and a non-empty `regenerate` list. The server rebuilds the plan and the reuse map from the owner's parent checkpoint — every segment not listed in `regenerate` reuses the parent's clip, and the parent's monolithic narration and music carry over as supplied audio (per-segment narration is re-synthesized). Optional `segment_overrides` edits only regenerated segments. Ownership checks are unchanged: `revise_from` is owner-only, and every reused clip and carried audio resource is authorized before any charge.
 
 ---
 
