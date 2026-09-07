@@ -716,6 +716,46 @@ Then concat the normalized 1080P clips.
 
 ---
 
+## publish_content
+
+Publish text and owned, completed Soundside media to a connected X account.
+This tool requires authenticated credits and is not available through x402.
+Connect X in Soundside Account settings once, then explicitly enable the
+publishing permission for the bot's API key or verified OAuth client. X tokens
+stay on Soundside's servers. OAuth 1.0a publishing tokens do not require periodic
+refresh; routine daily posting does not require a website login.
+
+| Parameter | Required | Type | Description |
+| --- | --- | --- | --- |
+| `idempotency_key` | yes | string | Stable identity for one intended post; reuse unchanged on retries |
+| `destination` | no | string | `x` |
+| `text` | no | string | Post text; supply text or media |
+| `resource_ids` | no | string[] | Owned, ready resource UUIDs: up to four supported images or one MP4 |
+| `project_id` | no | string | Owned project for the publishing receipt |
+| `alt_texts` | no | string[] | Image accessibility text in the same order as resources |
+| `made_with_ai` | no | boolean | AI attribution; defaults to `true` |
+
+```json
+{
+  "name": "publish_content",
+  "arguments": {
+    "destination": "x",
+    "idempotency_key": "promptmodder:2026-09-08:daily-video",
+    "text": "Today's finished video",
+    "resource_ids": ["<owned-finished-video-resource-uuid>"],
+    "project_id": "<owned-project-uuid>",
+    "made_with_ai": true
+  }
+}
+```
+
+Returns a pending receipt resource. Completion is pushed through resource
+notifications; recover with `lib_list` after reconnecting. The completed receipt
+contains the X account, post ID, post URL, and source resources. Changed payloads
+under an existing key are rejected. If the final X request has an unknown
+outcome, inspect the account before attempting another post; never switch keys
+to bypass the unresolved result. The tool does not schedule daily runs itself.
+
 ## lib_list
 
 List and search library entities.

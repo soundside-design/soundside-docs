@@ -2,7 +2,7 @@
 
 **AI Media Production Platform for Agents**
 
-Soundside exposes 19 MCP tools for generating, editing, composing, extracting, and analyzing media — images, video, audio, music, text, and business artifacts — plus LoRA adapter fine-tuning and server-side video composition. Connect any MCP client. OAuth/API-key credits cover all authenticated tools; the eligible subset also supports x402 USDC on Base without an account. Compose is authenticated-credit only.
+Soundside exposes 20 MCP tools for generating, editing, composing, extracting, and analyzing media — images, video, audio, music, text, and business artifacts — plus LoRA adapter fine-tuning and server-side video composition. Connect any MCP client. OAuth/API-key credits cover all authenticated tools; the eligible subset also supports x402 USDC on Base without an account. Compose and X publishing are authenticated-credit only.
 
 > **Currency 2026-08 (2026-08-23)**
 > - **Removed:** Luma (entirely) and Runway image/video generation. Runway is now audio-only — TTS and sound effects via `create_audio`.
@@ -107,7 +107,7 @@ See [x402 Guide](./guides/x402.md) for full setup.
 
 - **[Getting Started](./guides/getting-started.md)** — First MCP connection in 5 minutes
 - **[x402 Pay-Per-Call](./guides/x402.md)** — Crypto payments, no account needed
-- **[Tool Reference](./guides/tools.md)** — Detailed docs for all 19 tools
+- **[Tool Reference](./guides/tools.md)** — Detailed docs for all 20 tools
 
 ## Examples
 

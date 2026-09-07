@@ -1,6 +1,6 @@
 # Soundside — OpenClaw Skill
 
-Connect your OpenClaw agent to Soundside's 19 MCP tools for AI media generation, editing, composition, extraction, analysis, server-side composition, and LoRA adapter training.
+Connect your OpenClaw agent to Soundside's 20 MCP tools for AI media generation, editing, composition, extraction, analysis, server-side composition, and LoRA adapter training.
 
 ## Setup
 
