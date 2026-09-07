@@ -1,6 +1,6 @@
 # Tool Reference
 
-Complete reference for all 19 Soundside MCP tools. Always call `tools/list` at runtime to get the canonical schemas — this document is a human-readable companion.
+Complete reference for all 20 Soundside MCP tools. Always call `tools/list` at runtime to get the canonical schemas — this document is a human-readable companion.
 
 > **Currency 2026-08 (2026-08-23):** Luma removed entirely; Runway is audio-only (`create_audio` TTS + sound effects). New: `create_music` Lyria 3, `create_audio` Grok TTS, Grok per-second × resolution video pricing, Alibaba Wan 2.7 video defaults, MiniMax H3 video adapter.
 
@@ -13,6 +13,7 @@ Complete reference for all 19 Soundside MCP tools. Always call `tools/list` at r
 - Analysis (1): `analyze_media`
 - Adapters (3): `train_adapter`, `list_adapters`, `manage_adapter`
 - Library (3): `lib_list`, `lib_manage`, `lib_share`
+- Publishing (1): `publish_content` (authenticated credits only; unavailable through x402)
 
 ---
 
@@ -717,6 +718,8 @@ Then concat the normalized 1080P clips.
 ---
 
 ## publish_content
+
+See the [Publish to X guide](./x-publishing.md) for the connection flow, bot grants, durable receipts, recovery rules, and examples.
 
 Publish text and owned, completed Soundside media to a connected X account.
 This tool requires authenticated credits and is not available through x402.

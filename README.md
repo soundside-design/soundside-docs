@@ -24,7 +24,7 @@ POST https://mcp.soundside.ai/mcp
 {"jsonrpc":"2.0","id":"1","method":"tools/list","params":{}}
 ```
 
-## Tools (19)
+## Tools (20)
 
 ### Generation
 
@@ -75,6 +75,12 @@ POST https://mcp.soundside.ai/mcp
 | `lib_manage` | CRUD for projects, collections, resources, brand kits |
 | `lib_share` | Share projects with other users by email |
 
+### Publishing
+
+| Tool | What It Does | Access |
+|------|--------------|--------|
+| `publish_content` | Publish text or owned, completed images/video to a connected X account | Authenticated credits only |
+
 ## Pricing
 
 Soundside uses a credit system: **one credit = $0.01 USD**.
@@ -82,6 +88,7 @@ Soundside uses a credit system: **one credit = $0.01 USD**.
 - **AI generation** uses published metered rates based on provider cost with an approximately 10% platform margin unless a tool-specific flat fee is listed.
 - **Platform tools** (editing engine, library) are fixed-price: $0.01/call; vision QA is $0.03.
 - **Compose** adds a five-credit success-only orchestration fee and separately itemizes child calls. It requires OAuth/API-key credits and is not available through x402.
+- **X publishing** uses authenticated credits and is not available through x402. The current base classes are 2 credits for a plain post and 22 credits when the post text contains a URL; nonempty image alt text increases the class. The pre-execution estimate is authoritative and may change with the live pricing policy.
 - Every paid call receives a pre-execution estimate. The estimate is a **ceiling** — the actual charge is never more than the quote — and each paid tool call is settled exactly once.
 
 **Live pricing is always available at:**
@@ -89,7 +96,7 @@ Soundside uses a credit system: **one credit = $0.01 USD**.
 GET https://mcp.soundside.ai/api/x402/status
 ```
 
-This returns machine-readable per-tool, per-provider USDC prices for the x402 lane only. It does not publish the free tool or authenticated-credit-only Compose. Prices are DB-driven and may change — **always check the endpoint rather than hardcoding**. For variable-priced tools the published amount is a ceiling quote (worst case), not the typical settled price — rows carry a `price_note` where this matters.
+This returns machine-readable per-tool, per-provider USDC prices for the x402 lane only. It does not publish the free tool or authenticated-credit-only Compose and X publishing. Prices are DB-driven and may change — **always check the endpoint rather than hardcoding**. For variable-priced tools the published amount is a ceiling quote (worst case), not the typical settled price — rows carry a `price_note` where this matters.
 
 ## x402: Pay-Per-Call with Crypto
 
@@ -108,6 +115,7 @@ See [x402 Guide](./guides/x402.md) for full setup.
 - **[Getting Started](./guides/getting-started.md)** — First MCP connection in 5 minutes
 - **[x402 Pay-Per-Call](./guides/x402.md)** — Crypto payments, no account needed
 - **[Tool Reference](./guides/tools.md)** — Detailed docs for all 20 tools
+- **[Publish to X](./guides/x-publishing.md)** — Connect an X account and publish from MCP
 
 ## Examples
 
