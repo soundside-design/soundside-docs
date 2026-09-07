@@ -75,10 +75,10 @@ The project and every resource must belong to the authenticated user. Resources 
 
 ## Media and text limits
 
-- Text is limited to 280 weighted characters. URLs use X's weighted URL length.
+- Text uses a conservative 280-weight limit: wide Unicode code points count as two, and HTTP(S) URLs count as at least 23. Long URL literals can count more, so this may reject text that X itself accepts.
 - Use one to four JPEG, PNG, or WebP images, with each image at most 5 MiB.
 - Use one MP4 video, at most 512 MiB and 140 seconds. Video must use H.264 with `yuv420p`; audio, when present, must use AAC.
-- `alt_texts` follows the same order as `resource_ids`. Each image description is optional and may contain at most 1,000 characters.
+- `alt_texts` follows the same order as `resource_ids`. When provided, the list must have one entry per image, each at most 1,000 characters; use an empty string to skip an image. Omit alt text for video.
 - An MP4 cannot be combined with images. Duplicate resource IDs and mixed image/video requests are rejected.
 
 ## Daily external scheduling
