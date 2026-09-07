@@ -1,6 +1,6 @@
 # Soundside — OpenClaw Skill
 
-Connect your OpenClaw agent to Soundside's 19 MCP tools for AI media generation, editing, composition, extraction, analysis, server-side composition, and LoRA adapter training.
+Connect your OpenClaw agent to Soundside's 20 MCP tools for AI media generation, editing, composition, extraction, analysis, server-side composition, and LoRA adapter training.
 
 ## Setup
 
@@ -256,9 +256,9 @@ On resume, load the state file and skip completed steps. All resource IDs are du
 
 ## 💰 x402 Pay-Per-Call (No Account Needed)
 
-Soundside supports [x402](https://www.x402.org/) machine-to-machine payments. Agents with an EVM wallet (Base USDC) can pay per tool call without any API key or account:
+Soundside supports [x402](https://www.x402.org/) machine-to-machine payments. Agents with an EVM wallet (Base USDC) can pay per x402-enabled tool call without any API key or account. `compose_video` and `publish_content` require authenticated credits:
 
-1. Call any tool without `Authorization` header
+1. Call an x402-enabled tool without an `Authorization` header
 2. Server responds with `402 Payment Required` + payment details
 3. Sign the USDC payment with your wallet
 4. Retry the request with the signed payment header
@@ -317,12 +317,13 @@ This keeps workflow state durable without local storage.
 
 Live pricing: `GET https://mcp.soundside.ai/api/x402/status`
 
-One credit is $0.01 USD. Published metered rates are based on provider cost with an approximately 10% platform margin unless a tool-specific flat fee is listed. Compose adds a five-credit success-only orchestration fee and separately itemizes child calls; it is not available through x402. Every paid call receives a pre-execution estimate and settles once.
+One credit is $0.01 USD. Published metered rates are based on provider cost with an approximately 10% platform margin unless a tool-specific flat fee is listed. Compose adds a five-credit success-only orchestration fee and separately itemizes child calls; it is not available through x402. X publishing also requires authenticated credits. Every paid call receives a pre-execution estimate and settles once.
 
-At the pro tier, `lib_list` alone is free, Compose is authenticated-credit only, and the remaining 17 tools are x402-eligible subject to their provider/mode lanes.
+At the pro tier, `lib_list` alone is free, `compose_video` and `publish_content` are authenticated-credit only, and the remaining 17 tools are x402-eligible subject to their provider/mode lanes.
 
 ## Docs
 
 - [Getting Started](https://github.com/soundside-design/soundside-docs/blob/main/guides/getting-started.md)
 - [Tool Reference](https://github.com/soundside-design/soundside-docs/blob/main/guides/tools.md)
+- [Publish to X](https://github.com/soundside-design/soundside-docs/blob/main/guides/x-publishing.md)
 - [x402 Pay-Per-Call](https://github.com/soundside-design/soundside-docs/blob/main/guides/x402.md)

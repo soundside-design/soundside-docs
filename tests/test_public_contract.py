@@ -21,9 +21,9 @@ class PublicContractTests(TestCase):
     def test_exact_sets_are_independent(self):
         contract = json.loads((ROOT / "_data/public-mcp-contract.json").read_text())
         sets = contract["sets"]
-        self.assertEqual(len(sets["pro_tools"]), 19)
+        self.assertEqual(len(sets["pro_tools"]), 20)
         self.assertEqual(sets["free_tools"], ["lib_list"])
-        self.assertEqual(sets["authenticated_credit_only_tools"], ["compose_video"])
+        self.assertEqual(sets["authenticated_credit_only_tools"], ["compose_video", "publish_content"])
         self.assertEqual(len(sets["x402_eligible_tools"]), 17)
 
     def test_cast_visual_description_is_explicit_caller_authored(self):

@@ -109,10 +109,10 @@
   },
   "contract_version": "1.0",
   "counts": {
-    "authenticated_credit_only_tools": 1,
+    "authenticated_credit_only_tools": 2,
     "free_tools": 1,
-    "pro_tools": 19,
-    "provider_implementations": 19,
+    "pro_tools": 20,
+    "provider_implementations": 20,
     "x402_eligible_tools": 17
   },
   "deprecations": [
@@ -130,7 +130,7 @@
       "tool": "create_audio"
     }
   ],
-  "lane_projection_sha256": "a9eb272c31ee7a95dd2d0b290a3127a6198f249555ee203c4d48a627348322b3",
+  "lane_projection_sha256": "aaaf3e5e08b21742ecaef216e986bec7c7c64a5e336628f73517440ef1d4977c",
   "pricing_policy": {
     "compose_child_calls_itemized": true,
     "compose_orchestration_success_credits": 5,
@@ -706,6 +706,16 @@
     },
     {
       "auth_lanes": [
+        "authenticated_credits"
+      ],
+      "modes": [
+        "publish"
+      ],
+      "provider": "x",
+      "tool": "publish_content"
+    },
+    {
+      "auth_lanes": [
         "authenticated_credits",
         "x402"
       ],
@@ -730,7 +740,8 @@
   "public_tier": "pro",
   "sets": {
     "authenticated_credit_only_tools": [
-      "compose_video"
+      "compose_video",
+      "publish_content"
     ],
     "free_tools": [
       "lib_list"
@@ -754,6 +765,7 @@
       "lib_share",
       "list_adapters",
       "manage_adapter",
+      "publish_content",
       "train_adapter"
     ],
     "x402_eligible_tools": [
@@ -776,7 +788,7 @@
       "train_adapter"
     ]
   },
-  "tool_schema_sha256": "f05118bfc57677cc545e175dad5541ad5c5361fc75907e368bf04e1f10a06ce5",
+  "tool_schema_sha256": "c1bd4df20efbdaee3b1e1e7e21aebf4575538a4b499809da72624c446587eb97",
   "tools": [
     {
       "annotations": {
@@ -8274,6 +8286,195 @@
       },
       "providers": [
         "soundside.ai"
+      ]
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "readOnlyHint": false,
+        "title": "Publish Content"
+      },
+      "category": "publishing",
+      "description": "Publish text, one to four owner-owned JPEG/PNG/WEBP images (5 MiB each), or one owner-owned MP4 (512 MiB and 140 seconds maximum) using H.264/yuv420p video and AAC when audio is present, to a connected X account. Text uses a conservative 280 weighted-character ceiling. Requires an explicit idempotency key and a standing grant for API-key or OAuth-client automation. Returns a durable receipt resource; completion is pushed through resource notifications and can be recovered with lib_list. Example: {\"idempotency_key\":\"daily-2026-09-07\",\"text\":\"Daily update\",\"resource_ids\":[\"<uuid>\"]}.",
+      "execution": "pending",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "alt_texts": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 4,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional image alt text aligned with resource_ids; max 1000 characters each",
+            "title": "Alt Texts"
+          },
+          "destination": {
+            "const": "x",
+            "default": "x",
+            "description": "Publishing destination; currently only x",
+            "title": "Destination",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "description": "Required replay key, unique per user and exact request",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "made_with_ai": {
+            "default": true,
+            "description": "Send X's made_with_ai disclosure flag",
+            "title": "Made With Ai",
+            "type": "boolean"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Owner-owned library project UUID for the receipt",
+            "title": "Project Id"
+          },
+          "resource_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 4,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "One to four image resource UUIDs or one MP4 UUID",
+            "title": "Resource Ids"
+          },
+          "text": {
+            "default": "",
+            "description": "Post text; up to 280 weighted characters",
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "idempotency_key"
+        ],
+        "title": "_annotated_publish_contentArguments",
+        "type": "object"
+      },
+      "name": "publish_content",
+      "outputSchema": {
+        "additionalProperties": true,
+        "description": "Standard response format for MCP tool operations.\n\nAll MCP tools should return responses conforming to this schema\nto ensure consistent, parseable outputs.",
+        "properties": {
+          "duration_ms": {
+            "default": 0,
+            "description": "Operation duration in milliseconds",
+            "minimum": 0,
+            "title": "Duration Ms",
+            "type": "integer"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Error message (required if success=False)",
+            "title": "Error"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Tool-specific additional data",
+            "title": "Metadata"
+          },
+          "resource_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Primary resource ID created or affected",
+            "title": "Resource Id"
+          },
+          "resource_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "List of resource IDs (for multi-resource operations)",
+            "title": "Resource Ids"
+          },
+          "status": {
+            "default": "completed",
+            "description": "Operation status",
+            "enum": [
+              "completed",
+              "pending",
+              "failed",
+              "paused",
+              "needs_user_input"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "success": {
+            "default": true,
+            "description": "Whether the operation completed successfully",
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "title": "StandardToolResponse",
+        "type": "object"
+      },
+      "providers": [
+        "x"
       ]
     },
     {

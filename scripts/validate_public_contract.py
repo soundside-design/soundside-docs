@@ -132,11 +132,12 @@ def main() -> int:
     require(projection_hash(lane_projection) == contract["lane_projection_sha256"], "lane projection is not reproducible")
     require(contract["contract_version"] == "1.0", "unexpected contract version")
     require(contract["public_tier"] == "pro", "production contract must be pro")
-    require(len(contract["sets"]["pro_tools"]) == 19, "expected 19 pro tools")
+    require(len(contract["sets"]["pro_tools"]) == 20, "expected 20 pro tools")
     require(contract["sets"]["free_tools"] == ["lib_list"], "lib_list must be sole free tool")
-    require(contract["sets"]["authenticated_credit_only_tools"] == ["compose_video"], "Compose lane mismatch")
+    require(contract["sets"]["authenticated_credit_only_tools"] == ["compose_video", "publish_content"], "Credit-only lane mismatch")
     require(len(contract["sets"]["x402_eligible_tools"]) == 17, "expected 17 x402 tools")
     require("compose_video" not in contract["sets"]["x402_eligible_tools"], "Compose cannot be x402")
+    require("publish_content" not in contract["sets"]["x402_eligible_tools"], "Publishing cannot be x402")
     for key, value in contract["counts"].items():
         if key.endswith("_tools"):
             require(value == len(contract["sets"][key]), f"{key} count/set mismatch")
