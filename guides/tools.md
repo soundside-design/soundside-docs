@@ -719,45 +719,38 @@ Then concat the normalized 1080P clips.
 
 ## publish_content
 
-See the [Publish to X guide](./x-publishing.md) for the connection flow, bot grants, durable receipts, recovery rules, and examples.
+See the [X account operations guide](./x-publishing.md) for setup, agent grants, prices, durable receipts, and complete examples.
 
-Publish text and owned, completed Soundside media to a connected X account.
-This tool requires authenticated credits and is not available through x402.
-Connect X in Soundside Account settings once, then explicitly enable the
-publishing permission for the bot's API key or verified OAuth client. X tokens
-stay on Soundside's servers. OAuth 1.0a publishing tokens do not require periodic
-refresh; routine daily posting does not require a website login.
+`publish_content` is one authenticated-credit-only X tool with these actions:
 
-| Parameter | Required | Type | Description |
-| --- | --- | --- | --- |
-| `idempotency_key` | yes | string | Stable identity for one intended post; reuse unchanged on retries |
-| `destination` | no | string | `x` |
-| `text` | no | string | Post text; supply text or media |
-| `resource_ids` | no | string[] | Owned, ready resource UUIDs: up to four supported images or one MP4 |
-| `project_id` | no | string | Owned project for the publishing receipt |
-| `alt_texts` | no | string[] | Image accessibility text in the same order as resources |
-| `made_with_ai` | no | boolean | AI attribution; defaults to `true` |
+- Reads: `get_account`, `get_user`, `get_posts`, `list_posts`, `list_mentions`, `search_posts`, `list_followers`, `list_following`. Reads are synchronous and require the `read` grant for unattended agents.
+- Writes: `publish`, `reply`, `edit`, `delete`, `like`, `unlike`, `repost`, `unrepost`. Writes are asynchronous, require the matching `publish` or `manage` grant, and return a durable receipt.
+
+| Parameter | Required | Description |
+| --- | --- | --- |
+| `action` | no | Defaults to `publish`; choose one supported action above. |
+| `idempotency_key` | writes | Stable identity for one intended write. Required for writes, rejected for reads. |
+| `destination` | no | Only `x`. |
+| `text` / `resource_ids` / `alt_texts` | publish, reply, edit replacement | Text and owner-owned completed media. Use one MP4 or up to four images. |
+| `project_id` | no | Owner-owned project for a write receipt. |
+| `made_with_ai` | no | X disclosure. MCP default is `true`; pass explicitly and keep unchanged on retry. |
+| `post_id` / `post_ids` | target reads/writes | Numeric X IDs. `get_posts` accepts one `post_id` or up to 100 `post_ids`, never both. |
+| `x_user_id` | selected reads | Numeric X user ID; list posts/followers/following default to the connected account. |
+| `username` | `get_user` only | Exactly one of `username` or `x_user_id` is required. |
+| `query` | `search_posts` | Recent-search query. |
+| `limit` / `pagination_token` | list reads | Default 10; posts/mentions require 5+, recent search 10+, followers/following 1+, and every list caps at 100. Recent search covers seven days; keep the opaque next token unchanged. |
+| `reply_settings` | publish/reply | Omit for X’s default, or use `mentionedUsers`, `following`, `subscribers`, or `verified`. |
+| `preserve_media` | edit | Defaults to `true`; replacement media requires `false` and a complete replacement payload. |
 
 ```json
-{
-  "name": "publish_content",
-  "arguments": {
-    "destination": "x",
-    "idempotency_key": "promptmodder:2026-09-08:daily-video",
-    "text": "Today's finished video",
-    "resource_ids": ["<owned-finished-video-resource-uuid>"],
-    "project_id": "<owned-project-uuid>",
-    "made_with_ai": true
-  }
-}
+{"name":"publish_content","arguments":{"action":"get_user","destination":"x","username":"soundside"}}
 ```
 
-Returns a pending receipt resource. Completion is pushed through resource
-notifications; recover with `lib_list` after reconnecting. The completed receipt
-contains the X account, post ID, post URL, and source resources. Changed payloads
-under an existing key are rejected. If the final X request has an unknown
-outcome, inspect the account before attempting another post; never switch keys
-to bypass the unresolved result. The tool does not schedule daily runs itself.
+```json
+{"name":"publish_content","arguments":{"action":"reply","destination":"x","idempotency_key":"xop-reply-a1","post_id":"1888000000000000001","text":"Thanks for the feedback.","made_with_ai":false}}
+```
+
+Read responses are completed standard responses with top-level `data`, `meta`, optional `includes`, bounded `errors`, Soundside-derived `total_count`, and `next_pagination_token` where available; there is no `items` field. Lists can return an empty page or partial data plus errors. A successful write admission returns a pending receipt resource. Listen for resource updates or recover it with free `lib_list`. Never use a new key to bypass an unknown final write outcome.
 
 ## lib_list
 
