@@ -130,7 +130,7 @@
       "tool": "create_audio"
     }
   ],
-  "lane_projection_sha256": "aaaf3e5e08b21742ecaef216e986bec7c7c64a5e336628f73517440ef1d4977c",
+  "lane_projection_sha256": "1b82db293bbc21c03e28cbdd6a6561bc7462850c356f16cb4da9f3e8d2032c40",
   "pricing_policy": {
     "compose_child_calls_itemized": true,
     "compose_orchestration_success_credits": 5,
@@ -709,7 +709,22 @@
         "authenticated_credits"
       ],
       "modes": [
-        "publish"
+        "publish",
+        "reply",
+        "edit",
+        "delete",
+        "like",
+        "unlike",
+        "repost",
+        "unrepost",
+        "get_account",
+        "get_user",
+        "get_posts",
+        "list_posts",
+        "list_mentions",
+        "search_posts",
+        "list_followers",
+        "list_following"
       ],
       "provider": "x",
       "tool": "publish_content"
@@ -788,7 +803,7 @@
       "train_adapter"
     ]
   },
-  "tool_schema_sha256": "c1bd4df20efbdaee3b1e1e7e21aebf4575538a4b499809da72624c446587eb97",
+  "tool_schema_sha256": "1277e0e5e3b997a86148a54cf3c6a4c1ad0c7f3307a96dfc1ec551461e48debb",
   "tools": [
     {
       "annotations": {
@@ -8290,18 +8305,42 @@
     },
     {
       "annotations": {
-        "destructiveHint": false,
+        "destructiveHint": true,
         "idempotentHint": true,
         "openWorldHint": true,
         "readOnlyHint": false,
         "title": "Publish Content"
       },
       "category": "publishing",
-      "description": "Publish text, one to four owner-owned JPEG/PNG/WEBP images (5 MiB each), or one owner-owned MP4 (512 MiB and 140 seconds maximum) using H.264/yuv420p video and AAC when audio is present, to a connected X account. Text uses a conservative 280 weighted-character ceiling. Requires an explicit idempotency key and a standing grant for API-key or OAuth-client automation. Returns a durable receipt resource; completion is pushed through resource notifications and can be recovered with lib_list. Example: {\"idempotency_key\":\"daily-2026-09-07\",\"text\":\"Daily update\",\"resource_ids\":[\"<uuid>\"]}.",
-      "execution": "pending",
+      "description": "Read and manage a connected X account. action defaults to publish. Read actions return bounded posts/profiles and pagination tokens synchronously. Writes (publish/reply/edit/delete/like/unlike/repost/unrepost) require a unique idempotency_key and return a durable receipt: completion is pushed, or recover with lib_list. Reuse a key only with the exact same request; never retry an unknown write using a new key. API-key/OAuth-client automation needs an explicit read, publish (publish/reply), or manage (other writes) grant. Authenticated credits only. Post text max 280 weighted characters; up to four owned JPEG/PNG/WEBP UUIDs (5 MiB each) or one MP4 UUID (512 MiB, 140s, H.264/yuv420p, AAC if audio). made_with_ai is a client choice, default true for compatibility. Editing is limited by X's live edit_controls; delete affects the edit chain. Self-service replies require X's mention/quote eligibility. No DMs/bookmarks. Examples: {\"action\":\"get_account\"}; {\"action\":\"list_posts\",\"limit\":10}; {\"idempotency_key\":\"film-1\",\"text\":\"New film\",\"made_with_ai\":false}.",
+      "execution": "mixed",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
+          "action": {
+            "default": "publish",
+            "description": "Read accounts/posts or publish, reply, edit, delete, like/unlike, repost/unrepost",
+            "enum": [
+              "publish",
+              "reply",
+              "edit",
+              "delete",
+              "like",
+              "unlike",
+              "repost",
+              "unrepost",
+              "get_account",
+              "get_user",
+              "get_posts",
+              "list_posts",
+              "list_mentions",
+              "search_posts",
+              "list_followers",
+              "list_following"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
           "alt_texts": {
             "anyOf": [
               {
@@ -8316,27 +8355,102 @@
               }
             ],
             "default": null,
-            "description": "Optional image alt text aligned with resource_ids; max 1000 characters each",
+            "description": "Image alt text aligned with resource_ids; max 1000 characters each",
             "title": "Alt Texts"
           },
           "destination": {
             "const": "x",
             "default": "x",
-            "description": "Publishing destination; currently only x",
+            "description": "Connected service; currently x only",
             "title": "Destination",
             "type": "string"
           },
           "idempotency_key": {
-            "description": "Required replay key, unique per user and exact request",
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Idempotency Key",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Required for every write, omitted for reads. Reuse only for the exact same request",
+            "title": "Idempotency Key"
+          },
+          "include_private_metrics": {
+            "default": false,
+            "description": "get_posts only: request own-post non-public/organic/promoted metrics where X permits",
+            "title": "Include Private Metrics",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 10,
+            "description": "Page size, max 100. Posts/mentions min 5; recent search min 10; followers/following min 1. Ignored for direct lookups",
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
           },
           "made_with_ai": {
             "default": true,
-            "description": "Send X's made_with_ai disclosure flag",
+            "description": "Client-chosen AI disclosure for publish/reply/edit. True by legacy default; pass false to omit the label",
             "title": "Made With Ai",
+            "type": "boolean"
+          },
+          "pagination_token": {
+            "anyOf": [
+              {
+                "maxLength": 2048,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Opaque next_pagination_token from the same action/filters; no automatic page traversal",
+            "title": "Pagination Token"
+          },
+          "post_id": {
+            "anyOf": [
+              {
+                "pattern": "^[1-9][0-9]{0,18}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Numeric X post ID for reply/edit/delete/like/unlike/repost/unrepost, or one get_posts lookup",
+            "title": "Post Id"
+          },
+          "post_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 100,
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "get_posts: 1–100 distinct numeric X post IDs, exclusive with post_id",
+            "title": "Post Ids"
+          },
+          "preserve_media": {
+            "default": true,
+            "description": "edit only: preserve original media when safely possible. False replaces complete text/media; no resource_ids with true",
+            "title": "Preserve Media",
             "type": "boolean"
           },
           "project_id": {
@@ -8349,8 +8463,42 @@
               }
             ],
             "default": null,
-            "description": "Owner-owned library project UUID for the receipt",
+            "description": "Owner-owned Soundside project UUID for the receipt or read accounting",
             "title": "Project Id"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "search_posts only: X recent-search query (last 7 days); supports from:, to:, and operators",
+            "title": "Query"
+          },
+          "reply_settings": {
+            "anyOf": [
+              {
+                "enum": [
+                  "mentionedUsers",
+                  "following",
+                  "subscribers",
+                  "verified"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "publish/reply: restrict who can reply; omit for X's default audience",
+            "title": "Reply Settings"
           },
           "resource_ids": {
             "anyOf": [
@@ -8366,19 +8514,45 @@
               }
             ],
             "default": null,
-            "description": "One to four image resource UUIDs or one MP4 UUID",
+            "description": "Owned library UUIDs: up to four images or one MP4, for publish/reply/edit",
             "title": "Resource Ids"
           },
           "text": {
             "default": "",
-            "description": "Post text; up to 280 weighted characters",
+            "description": "Complete post text for publish/reply/edit; up to 280 weighted characters",
             "title": "Text",
             "type": "string"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "maxLength": 16,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "get_user only: X handle, with optional @; use either this or x_user_id",
+            "title": "Username"
+          },
+          "x_user_id": {
+            "anyOf": [
+              {
+                "pattern": "^[1-9][0-9]{0,18}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Numeric X user ID for get_user or list_posts/followers/following; list actions default to the connected account",
+            "title": "X User Id"
           }
         },
-        "required": [
-          "idempotency_key"
-        ],
         "title": "_annotated_publish_contentArguments",
         "type": "object"
       },

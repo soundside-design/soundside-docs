@@ -79,7 +79,7 @@ POST https://mcp.soundside.ai/mcp
 
 | Tool | What It Does | Access |
 |------|--------------|--------|
-| `publish_content` | Publish text or owned, completed images/video to a connected X account | Authenticated credits only |
+| `publish_content` | Bounded X account reads plus durable publish, reply, edit, delete, like, and repost operations | Authenticated credits only |
 
 ## Pricing
 
@@ -88,7 +88,7 @@ Soundside uses a credit system: **one credit = $0.01 USD**.
 - **AI generation** uses published metered rates based on provider cost with an approximately 10% platform margin unless a tool-specific flat fee is listed.
 - **Platform tools** (editing engine, library) are fixed-price: $0.01/call; vision QA is $0.03.
 - **Compose** adds a five-credit success-only orchestration fee and separately itemizes child calls. It requires OAuth/API-key credits and is not available through x402.
-- **X publishing** uses authenticated credits and is not available through x402. The current base classes are 2 credits for a plain post and 22 credits when the post text contains a URL; nonempty image alt text increases the class. The pre-execution estimate is authoritative and may change with the live pricing policy.
+- **X account operations** use authenticated credits and are not available through x402. Publish is 2 credits normally or 22 with a URL; replies use the same class, target operations cost 2 credits, and reads quote the requested-page ceiling but settle against the actual returned count (empty results cost 0). See [X account operations](./guides/x-publishing.md).
 - Every paid call receives a pre-execution estimate. The estimate is a **ceiling** — the actual charge is never more than the quote — and each paid tool call is settled exactly once.
 
 **Live pricing is always available at:**
