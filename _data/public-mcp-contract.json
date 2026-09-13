@@ -803,7 +803,7 @@
       "train_adapter"
     ]
   },
-  "tool_schema_sha256": "1277e0e5e3b997a86148a54cf3c6a4c1ad0c7f3307a96dfc1ec551461e48debb",
+  "tool_schema_sha256": "a9c6bf8ffeb9ee28ccb9e9d80e606460cc8a246cb7d693f52b73e11f77b30f5e",
   "tools": [
     {
       "annotations": {
@@ -1152,6 +1152,45 @@
             "default": null,
             "description": "Existing transcript to reuse",
             "title": "Transcript Resource Id"
+          },
+          "video_end_sec": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Vertex vision_qa video window end in seconds",
+            "title": "Video End Sec"
+          },
+          "video_sampling_fps": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Focused Vertex vision_qa video sampling FPS (0 < fps <= 4; requires video_end_sec)",
+            "title": "Video Sampling Fps"
+          },
+          "video_start_sec": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Vertex vision_qa video window start in seconds",
+            "title": "Video Start Sec"
           }
         },
         "title": "analyze_mediaArguments",
