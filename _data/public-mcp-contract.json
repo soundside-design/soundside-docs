@@ -803,7 +803,7 @@
       "train_adapter"
     ]
   },
-  "tool_schema_sha256": "a9c6bf8ffeb9ee28ccb9e9d80e606460cc8a246cb7d693f52b73e11f77b30f5e",
+  "tool_schema_sha256": "a9fa5a8d566f3878e7fabb7fe5b0f5429a650c337b0fc4663c73816df1ccfaf8",
   "tools": [
     {
       "annotations": {
@@ -6868,6 +6868,22 @@
             "default": null,
             "description": "End time",
             "title": "End Sec"
+          },
+          "frame_indices": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Exact zero-based decoded frame indices (1-64 distinct values; extract_frames only)",
+            "title": "Frame Indices"
           },
           "frame_interval_sec": {
             "anyOf": [
