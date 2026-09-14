@@ -130,7 +130,7 @@
       "tool": "create_audio"
     }
   ],
-  "lane_projection_sha256": "1b82db293bbc21c03e28cbdd6a6561bc7462850c356f16cb4da9f3e8d2032c40",
+  "lane_projection_sha256": "2751a1c0e5c3136505ffa6d76e41335b21b308e8a71684bc06ebd9acc4136790",
   "pricing_policy": {
     "compose_child_calls_itemized": true,
     "compose_orchestration_success_credits": 5,
@@ -444,7 +444,8 @@
         "x402"
       ],
       "modes": [
-        "text_to_image"
+        "text_to_image",
+        "image_edit"
       ],
       "provider": "vertex",
       "tool": "create_image"
