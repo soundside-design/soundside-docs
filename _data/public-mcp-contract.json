@@ -130,7 +130,7 @@
       "tool": "create_audio"
     }
   ],
-  "lane_projection_sha256": "1b82db293bbc21c03e28cbdd6a6561bc7462850c356f16cb4da9f3e8d2032c40",
+  "lane_projection_sha256": "2751a1c0e5c3136505ffa6d76e41335b21b308e8a71684bc06ebd9acc4136790",
   "pricing_policy": {
     "compose_child_calls_itemized": true,
     "compose_orchestration_success_credits": 5,
@@ -444,7 +444,8 @@
         "x402"
       ],
       "modes": [
-        "text_to_image"
+        "text_to_image",
+        "image_edit"
       ],
       "provider": "vertex",
       "tool": "create_image"
@@ -803,7 +804,7 @@
       "train_adapter"
     ]
   },
-  "tool_schema_sha256": "1277e0e5e3b997a86148a54cf3c6a4c1ad0c7f3307a96dfc1ec551461e48debb",
+  "tool_schema_sha256": "7ec46c571607566f22ad4a5e17e7576c1c319d6c8137e91fd66a8daffc446731",
   "tools": [
     {
       "annotations": {
@@ -895,7 +896,7 @@
               }
             ],
             "default": null,
-            "description": "Eval LLM: vertex, grok, anthropic, openai",
+            "description": "Eval LLM: vertex, qwen, grok, anthropic, openai",
             "title": "Eval Provider"
           },
           "evaluation_context": {
@@ -1152,6 +1153,45 @@
             "default": null,
             "description": "Existing transcript to reuse",
             "title": "Transcript Resource Id"
+          },
+          "video_end_sec": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Vertex vision_qa video window end in seconds",
+            "title": "Video End Sec"
+          },
+          "video_sampling_fps": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Focused Vertex vision_qa video sampling FPS (0 < fps <= 4; requires video_end_sec)",
+            "title": "Video Sampling Fps"
+          },
+          "video_start_sec": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Vertex vision_qa video window start in seconds",
+            "title": "Video Start Sec"
           }
         },
         "title": "analyze_mediaArguments",
@@ -2473,7 +2513,7 @@
                                   {
                                     "items": {
                                       "additionalProperties": false,
-                                      "description": "Narration or dialogue for a single segment in per-segment mode.",
+                                      "description": "Narration or dialogue for a single segment in per-segment mode.\n\nA segment can either generate TTS from ``text`` or reuse one authorized\naudio resource.  Reused audio keeps its segment placement and role but\nnever carries voice-generation instructions.",
                                       "properties": {
                                         "cast_member": {
                                           "anyOf": [
@@ -2496,6 +2536,19 @@
                                           "title": "Delay Sec",
                                           "type": "number"
                                         },
+                                        "resource_id": {
+                                          "anyOf": [
+                                            {
+                                              "type": "string"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ],
+                                          "default": null,
+                                          "description": "Existing authorized audio resource to place at this segment's offset.",
+                                          "title": "Resource Id"
+                                        },
                                         "role": {
                                           "default": "narrator",
                                           "enum": [
@@ -2511,10 +2564,18 @@
                                           "type": "integer"
                                         },
                                         "text": {
-                                          "maxLength": 2000,
-                                          "minLength": 1,
-                                          "title": "Text",
-                                          "type": "string"
+                                          "anyOf": [
+                                            {
+                                              "maxLength": 2000,
+                                              "minLength": 1,
+                                              "type": "string"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ],
+                                          "default": null,
+                                          "title": "Text"
                                         },
                                         "voice_id": {
                                           "anyOf": [
@@ -2542,13 +2603,11 @@
                                         }
                                       },
                                       "required": [
-                                        "segment_index",
-                                        "text"
+                                        "segment_index"
                                       ],
                                       "title": "SegmentNarration",
                                       "type": "object"
                                     },
-                                    "maxItems": 15,
                                     "type": "array"
                                   },
                                   {
@@ -2795,7 +2854,7 @@
                             }
                           ],
                           "default": null,
-                          "description": "Optional caller-authored appearance text for this explicit cast member, used only by deterministic explicit-cast reference prompting.",
+                          "description": "Optional caller-authored appearance text used by deterministic explicit-cast reference prompting and planning. Preserve wardrobe/material and design details; the brief determines the artistic medium.",
                           "title": "Visual Description"
                         }
                       },
@@ -3205,8 +3264,8 @@
                         "duration_sec": {
                           "anyOf": [
                             {
+                              "exclusiveMinimum": 0.0,
                               "maximum": 30.0,
-                              "minimum": 1.0,
                               "type": "number"
                             },
                             {
@@ -3214,6 +3273,7 @@
                             }
                           ],
                           "default": null,
+                          "description": "Segment duration. Existing footage supports positive subsecond edits; other segment types require at least one second.",
                           "title": "Duration Sec"
                         },
                         "fade_in_sec": {
@@ -3354,6 +3414,19 @@
                             }
                           ],
                           "default": null
+                        },
+                        "last_frame": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "default": null,
+                          "description": "Authorized library resource UUID for the final frame pin. Video segments only; Compose does not accept URLs or URIs.",
+                          "title": "Last Frame"
                         },
                         "line_spacing": {
                           "anyOf": [
@@ -3514,6 +3587,34 @@
                           "title": "Source Audio Volume",
                           "type": "number"
                         },
+                        "source_end_sec": {
+                          "anyOf": [
+                            {
+                              "minimum": 0.0,
+                              "type": "number"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "default": null,
+                          "description": "End time in seconds for a reviewed window of an existing video resource. Must be greater than source_start_sec.",
+                          "title": "Source End Sec"
+                        },
+                        "source_start_sec": {
+                          "anyOf": [
+                            {
+                              "minimum": 0.0,
+                              "type": "number"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "default": null,
+                          "description": "Start time in seconds for a reviewed window of an existing video resource. Must be paired with source_end_sec.",
+                          "title": "Source Start Sec"
+                        },
                         "text": {
                           "anyOf": [
                             {
@@ -3665,6 +3766,7 @@
                                   "type": "array"
                                 },
                                 "subjects": {
+                                  "description": "Authorized subject-reference resource UUIDs for this shot. Choose references whose visible subjects match the shot's intended presence and state. A group reference can reintroduce an absent or destroyed subject even when first_frame shows only the survivor; use a matching solo reference for solo shots.",
                                   "items": {
                                     "type": "string"
                                   },
@@ -6829,6 +6931,22 @@
             "default": null,
             "description": "End time",
             "title": "End Sec"
+          },
+          "frame_indices": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Exact zero-based decoded frame indices (1-64 distinct values; extract_frames only)",
+            "title": "Frame Indices"
           },
           "frame_interval_sec": {
             "anyOf": [
