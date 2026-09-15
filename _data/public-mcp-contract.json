@@ -804,7 +804,7 @@
       "train_adapter"
     ]
   },
-  "tool_schema_sha256": "a9fa5a8d566f3878e7fabb7fe5b0f5429a650c337b0fc4663c73816df1ccfaf8",
+  "tool_schema_sha256": "7ec46c571607566f22ad4a5e17e7576c1c319d6c8137e91fd66a8daffc446731",
   "tools": [
     {
       "annotations": {
@@ -896,7 +896,7 @@
               }
             ],
             "default": null,
-            "description": "Eval LLM: vertex, grok, anthropic, openai",
+            "description": "Eval LLM: vertex, qwen, grok, anthropic, openai",
             "title": "Eval Provider"
           },
           "evaluation_context": {
@@ -2513,7 +2513,7 @@
                                   {
                                     "items": {
                                       "additionalProperties": false,
-                                      "description": "Narration or dialogue for a single segment in per-segment mode.",
+                                      "description": "Narration or dialogue for a single segment in per-segment mode.\n\nA segment can either generate TTS from ``text`` or reuse one authorized\naudio resource.  Reused audio keeps its segment placement and role but\nnever carries voice-generation instructions.",
                                       "properties": {
                                         "cast_member": {
                                           "anyOf": [
@@ -2536,6 +2536,19 @@
                                           "title": "Delay Sec",
                                           "type": "number"
                                         },
+                                        "resource_id": {
+                                          "anyOf": [
+                                            {
+                                              "type": "string"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ],
+                                          "default": null,
+                                          "description": "Existing authorized audio resource to place at this segment's offset.",
+                                          "title": "Resource Id"
+                                        },
                                         "role": {
                                           "default": "narrator",
                                           "enum": [
@@ -2551,10 +2564,18 @@
                                           "type": "integer"
                                         },
                                         "text": {
-                                          "maxLength": 2000,
-                                          "minLength": 1,
-                                          "title": "Text",
-                                          "type": "string"
+                                          "anyOf": [
+                                            {
+                                              "maxLength": 2000,
+                                              "minLength": 1,
+                                              "type": "string"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ],
+                                          "default": null,
+                                          "title": "Text"
                                         },
                                         "voice_id": {
                                           "anyOf": [
@@ -2582,13 +2603,11 @@
                                         }
                                       },
                                       "required": [
-                                        "segment_index",
-                                        "text"
+                                        "segment_index"
                                       ],
                                       "title": "SegmentNarration",
                                       "type": "object"
                                     },
-                                    "maxItems": 15,
                                     "type": "array"
                                   },
                                   {
@@ -2835,7 +2854,7 @@
                             }
                           ],
                           "default": null,
-                          "description": "Optional caller-authored appearance text for this explicit cast member, used only by deterministic explicit-cast reference prompting.",
+                          "description": "Optional caller-authored appearance text used by deterministic explicit-cast reference prompting and planning. Preserve wardrobe/material and design details; the brief determines the artistic medium.",
                           "title": "Visual Description"
                         }
                       },
@@ -3245,8 +3264,8 @@
                         "duration_sec": {
                           "anyOf": [
                             {
+                              "exclusiveMinimum": 0.0,
                               "maximum": 30.0,
-                              "minimum": 1.0,
                               "type": "number"
                             },
                             {
@@ -3254,6 +3273,7 @@
                             }
                           ],
                           "default": null,
+                          "description": "Segment duration. Existing footage supports positive subsecond edits; other segment types require at least one second.",
                           "title": "Duration Sec"
                         },
                         "fade_in_sec": {
@@ -3394,6 +3414,19 @@
                             }
                           ],
                           "default": null
+                        },
+                        "last_frame": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "default": null,
+                          "description": "Authorized library resource UUID for the final frame pin. Video segments only; Compose does not accept URLs or URIs.",
+                          "title": "Last Frame"
                         },
                         "line_spacing": {
                           "anyOf": [
@@ -3554,6 +3587,34 @@
                           "title": "Source Audio Volume",
                           "type": "number"
                         },
+                        "source_end_sec": {
+                          "anyOf": [
+                            {
+                              "minimum": 0.0,
+                              "type": "number"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "default": null,
+                          "description": "End time in seconds for a reviewed window of an existing video resource. Must be greater than source_start_sec.",
+                          "title": "Source End Sec"
+                        },
+                        "source_start_sec": {
+                          "anyOf": [
+                            {
+                              "minimum": 0.0,
+                              "type": "number"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "default": null,
+                          "description": "Start time in seconds for a reviewed window of an existing video resource. Must be paired with source_end_sec.",
+                          "title": "Source Start Sec"
+                        },
                         "text": {
                           "anyOf": [
                             {
@@ -3705,6 +3766,7 @@
                                   "type": "array"
                                 },
                                 "subjects": {
+                                  "description": "Authorized subject-reference resource UUIDs for this shot. Choose references whose visible subjects match the shot's intended presence and state. A group reference can reintroduce an absent or destroyed subject even when first_frame shows only the survivor; use a matching solo reference for solo shots.",
                                   "items": {
                                     "type": "string"
                                   },
