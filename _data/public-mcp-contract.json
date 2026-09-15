@@ -109,9 +109,9 @@
   },
   "contract_version": "1.0",
   "counts": {
-    "authenticated_credit_only_tools": 2,
+    "authenticated_credit_only_tools": 3,
     "free_tools": 1,
-    "pro_tools": 20,
+    "pro_tools": 21,
     "provider_implementations": 20,
     "x402_eligible_tools": 17
   },
@@ -130,7 +130,7 @@
       "tool": "create_audio"
     }
   ],
-  "lane_projection_sha256": "2751a1c0e5c3136505ffa6d76e41335b21b308e8a71684bc06ebd9acc4136790",
+  "lane_projection_sha256": "d6d12c7b5529acb9ecea7a8d93aeafce6c52eb9a1ecfb1a2f764c78cb589ab9f",
   "pricing_policy": {
     "compose_child_calls_itemized": true,
     "compose_orchestration_success_credits": 5,
@@ -732,6 +732,37 @@
     },
     {
       "auth_lanes": [
+        "authenticated_credits"
+      ],
+      "modes": [
+        "reskin",
+        "recast"
+      ],
+      "provider": "alibaba",
+      "tool": "remix_video"
+    },
+    {
+      "auth_lanes": [
+        "authenticated_credits"
+      ],
+      "modes": [
+        "reskin"
+      ],
+      "provider": "grok",
+      "tool": "remix_video"
+    },
+    {
+      "auth_lanes": [
+        "authenticated_credits"
+      ],
+      "modes": [
+        "reskin"
+      ],
+      "provider": "minimax",
+      "tool": "remix_video"
+    },
+    {
+      "auth_lanes": [
         "authenticated_credits",
         "x402"
       ],
@@ -757,7 +788,8 @@
   "sets": {
     "authenticated_credit_only_tools": [
       "compose_video",
-      "publish_content"
+      "publish_content",
+      "remix_video"
     ],
     "free_tools": [
       "lib_list"
@@ -782,6 +814,7 @@
       "list_adapters",
       "manage_adapter",
       "publish_content",
+      "remix_video",
       "train_adapter"
     ],
     "x402_eligible_tools": [
@@ -804,7 +837,7 @@
       "train_adapter"
     ]
   },
-  "tool_schema_sha256": "7ec46c571607566f22ad4a5e17e7576c1c319d6c8137e91fd66a8daffc446731",
+  "tool_schema_sha256": "d508f727ace5158bd5cb1143bbd48be7877d2b424782d529a1be3bba2eca177d",
   "tools": [
     {
       "annotations": {
@@ -815,7 +848,7 @@
         "title": "Analyze Media"
       },
       "category": "analysis",
-      "description": "Analyze media: technical metadata, vision_qa, transcribe, detect_segments, export_edl.",
+      "description": "Analyze media: technical metadata, vision_qa, transcribe, detect_segments, detect_shots, export_edl.",
       "execution": "sync",
       "inputSchema": {
         "properties": {
@@ -827,6 +860,7 @@
               "vision_qa",
               "transcribe",
               "detect_segments",
+              "detect_shots",
               "export_edl"
             ],
             "title": "Analysis Type",
@@ -1002,6 +1036,12 @@
             "title": "Min Segment Sec",
             "type": "number"
           },
+          "min_shot_frames": {
+            "default": 6,
+            "description": "detect_shots: minimum frames a shot may have. Candidates closer than this to a neighbor or to the range edges are dropped.",
+            "title": "Min Shot Frames",
+            "type": "integer"
+          },
           "mode": {
             "default": "keep",
             "description": "Segment detection mode",
@@ -1109,6 +1149,12 @@
             "description": "Persisted segments for export_edl",
             "title": "Segments Resource Id"
           },
+          "shot_detect_threshold": {
+            "default": 0.3,
+            "description": "detect_shots: ffmpeg scene-score threshold (0-1). Lower over-proposes candidate cuts for the adjacent-frame verification pass to filter.",
+            "title": "Shot Detect Threshold",
+            "type": "number"
+          },
           "silence_threshold_sec": {
             "default": 1.0,
             "description": "Min silence gap (seconds)",
@@ -1153,6 +1199,12 @@
             "default": null,
             "description": "Existing transcript to reuse",
             "title": "Transcript Resource Id"
+          },
+          "verify_shots": {
+            "default": true,
+            "description": "detect_shots: run the adjacent-frame pixel-diff verification pass that rejects false positives (fast pans, dissolves). Disable only for fast iteration; never the production default.",
+            "title": "Verify Shots",
+            "type": "boolean"
           },
           "video_end_sec": {
             "anyOf": [
@@ -8767,6 +8819,339 @@
       },
       "providers": [
         "x"
+      ]
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true,
+        "readOnlyHint": false,
+        "title": "Remix Video"
+      },
+      "category": "composition",
+      "description": "Shot-for-shot video reskin or recast (\"remix\") of a film you own.\n\nDetects every cut in `source_resource_id`, holds a written identity/world contract (the \"bible\") across all of them, regenerates each shot in a new visual style (mode=\"reskin\") or swaps the on-screen performer while keeping the source's background/lighting (mode=\"recast\"), conforms every clip back to its exact original frame count, and re-marries the original soundtrack — so the delivered film has the same cuts, same beat timing, same audio as the source, just a different visual world (or cast).\n\nRequires `rights_attested=true`: you are attesting you hold the rights to remix the source. The call is refused otherwise.\n\nAsync: returns a pending resource_id immediately; the job runs in the background and a `notifications/resources/updated` push tells you when it (and its side-by-side comparison, and its JSON delivery report) are ready. No polling needed — but `lib_list` also works.\n\nQuote first: pass `estimate_only=true` to probe, detect shots, plan, price and return the quote (and a persisted shot-plan resource) WITHOUT creating a job or spending the root fee — useful before committing real budget. `budget_cap_credits` refuses the real call before any commitment if the priced quote exceeds it.\n\nRevision: pass `revise_from=<parent remix UUID>` (owner-only, requires `brief=\"\"`) with `regenerate_actions` naming which actions to redo; empty/omitted `regenerate_actions` means pure re-assembly of the parent's already-accepted clips.\n\nExample (quote only): remix_video(source_resource_id=\"<uuid>\", brief=\"A neon-drenched cyberpunk world\", rights_attested=true, estimate_only=true)\n\nExample (run it): remix_video(source_resource_id=\"<uuid>\", brief=\"A neon-drenched cyberpunk world\", mode=\"reskin\", quality_profile=\"standard\", rights_attested=true, budget_cap_credits=5000)\n",
+      "execution": "pending",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "brief": {
+            "description": "Target world and cast, in prose (e.g. \"A neon cyberpunk city, the mechanic is now a cybernetic courier\"). Must be \"\" when `revise_from` is set — the revision reuses the parent's bible.",
+            "title": "Brief",
+            "type": "string"
+          },
+          "budget_cap_credits": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Hard ceiling in credits. A priced quote above this is refused before any charge (INVALID_PARAMS), with the quote returned in metadata so you can see why.",
+            "title": "Budget Cap Credits"
+          },
+          "collection_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Caller-owned collection UUID. Must belong to the selected project.",
+            "title": "Collection Id"
+          },
+          "collection_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Override the auto-generated collection name.",
+            "title": "Collection Name"
+          },
+          "engine_overrides": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Force an engine for one action_id, or every action via the key \"*\". A bake-off-rejected engine (grok_edit, wan_vace) is refused with INVALID_PARAMS.",
+            "title": "Engine Overrides"
+          },
+          "estimate_only": {
+            "default": false,
+            "description": "Probe + detect + plan + quote, persist the plan, and return the quote. Creates no parent, no admission slot, no root fee charge.",
+            "title": "Estimate Only",
+            "type": "boolean"
+          },
+          "max_shot_seconds": {
+            "default": 8.0,
+            "description": "Actions longer than this are split at a motion-energy minimum.",
+            "exclusiveMinimum": 0,
+            "title": "Max Shot Seconds",
+            "type": "number"
+          },
+          "mode": {
+            "default": "reskin",
+            "description": "'reskin' (default): regenerate every shot from restyled keyframes — the universal path, works on any shot. 'recast': keep the source clip and swap the on-screen performer via Wan 2.2 Animate — keeps the source background/lighting, costs per source second instead of per action.",
+            "enum": [
+              "reskin",
+              "recast"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Project UUID. Auto-created if omitted.",
+            "title": "Project Id"
+          },
+          "quality_profile": {
+            "default": "standard",
+            "description": "Resolution and repair-budget tier: draft (480p, no automatic repair), standard (720p, 1 repair wave), premium (1080p, 2 repair waves, pauses for confirmation after the proof).",
+            "enum": [
+              "draft",
+              "standard",
+              "premium"
+            ],
+            "title": "Quality Profile",
+            "type": "string"
+          },
+          "range_end_sec": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Sub-range end, in source seconds. Defaults to the end of the film.",
+            "title": "Range End Sec"
+          },
+          "range_start_sec": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Sub-range start, in source seconds. Defaults to the start of the film.",
+            "title": "Range Start Sec"
+          },
+          "reassemble_only": {
+            "default": false,
+            "description": "Re-verify, assemble, compare and report from an existing checkpoint; no generation. Mutually exclusive with `revise_from`.",
+            "title": "Reassemble Only",
+            "type": "boolean"
+          },
+          "reference_images": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Caller design references (style/character boards), up to 8 owned image resource UUIDs.",
+            "title": "Reference Images"
+          },
+          "regenerate_actions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "With `revise_from`: action ids to regenerate. Empty/omitted means pure reassembly of the parent's already-accepted clips.",
+            "title": "Regenerate Actions"
+          },
+          "revise_from": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Parent remix resource UUID to revise. Owner-only. Requires brief=\"\"; mutually exclusive with `reassemble_only`.",
+            "title": "Revise From"
+          },
+          "rights_attested": {
+            "description": "Must be true. You are attesting that you hold the rights to remix the source film. The call is refused with a clear error when this is not true.",
+            "title": "Rights Attested",
+            "type": "boolean"
+          },
+          "source_resource_id": {
+            "description": "The caller's film to remix. Must be a completed, owned video resource UUID.",
+            "title": "Source Resource Id",
+            "type": "string"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Tags merged with the server's remix/final tags.",
+            "title": "Tags"
+          }
+        },
+        "required": [
+          "source_resource_id",
+          "brief",
+          "rights_attested"
+        ],
+        "title": "remix_videoArguments",
+        "type": "object"
+      },
+      "name": "remix_video",
+      "outputSchema": {
+        "additionalProperties": true,
+        "description": "Standard response format for MCP tool operations.\n\nAll MCP tools should return responses conforming to this schema\nto ensure consistent, parseable outputs.",
+        "properties": {
+          "duration_ms": {
+            "default": 0,
+            "description": "Operation duration in milliseconds",
+            "minimum": 0,
+            "title": "Duration Ms",
+            "type": "integer"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Error message (required if success=False)",
+            "title": "Error"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Tool-specific additional data",
+            "title": "Metadata"
+          },
+          "resource_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Primary resource ID created or affected",
+            "title": "Resource Id"
+          },
+          "resource_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "List of resource IDs (for multi-resource operations)",
+            "title": "Resource Ids"
+          },
+          "status": {
+            "default": "completed",
+            "description": "Operation status",
+            "enum": [
+              "completed",
+              "pending",
+              "failed",
+              "paused",
+              "needs_user_input"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "success": {
+            "default": true,
+            "description": "Whether the operation completed successfully",
+            "title": "Success",
+            "type": "boolean"
+          }
+        },
+        "title": "StandardToolResponse",
+        "type": "object"
+      },
+      "providers": [
+        "alibaba",
+        "grok",
+        "minimax"
       ]
     },
     {
