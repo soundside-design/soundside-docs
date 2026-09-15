@@ -1,14 +1,16 @@
 # Tool Reference
 
-Complete reference for all 20 Soundside MCP tools. Always call `tools/list` at runtime to get the canonical schemas — this document is a human-readable companion.
+Complete reference for all 21 Soundside MCP tools. Always call `tools/list` at runtime to get the canonical schemas — this document is a human-readable companion.
 
+> **Currency 2026-09 (2026-09-15):** New: `remix_video` (shot-for-shot reskin/recast, authenticated-credit only) and `analyze_media(analysis_type="detect_shots")` (pixel-driven cut detection).
+>
 > **Currency 2026-08 (2026-08-23):** Luma removed entirely; Runway is audio-only (`create_audio` TTS + sound effects). New: `create_music` Lyria 3, `create_audio` Grok TTS, Grok per-second × resolution video pricing, Alibaba Wan 2.7 video defaults, MiniMax H3 video adapter.
 
 **Live pricing:** `GET https://mcp.soundside.ai/api/x402/status`
 
 **Tool surface:**
 - Generation (6): `create_image`, `create_video`, `create_audio`, `create_music`, `create_text`, `create_artifact`
-- Composition (1): `compose_video`
+- Composition (2): `compose_video`, `remix_video`
 - Editing (5): `edit_video`, `edit_audio`, `compose_media`, `apply_effect`, `extract_media`
 - Analysis (1): `analyze_media`
 - Adapters (3): `train_adapter`, `list_adapters`, `manage_adapter`
@@ -536,12 +538,13 @@ Analyze media for technical properties, reusable transcript artifacts, rough-cut
 - `vision_qa` — AI evaluation. Default provider `vertex` uses **Gemini 3.1 Pro Preview** (for video) or Gemini 3.7 Flash (images). Scores prompt adherence, motion quality, temporal coherence, plus audio content analysis (narration overlap, audio artifacts, what's heard)
 - `transcribe` — Canonical STT surface. Persists transcript JSON plus optional SRT/VTT sidecars
 - `detect_segments` — Transcript-guided keep-range detection for rough cuts
+- `detect_shots` — Pixel-driven visual cut detection: an ffmpeg scene-score sweep proposes candidate cuts, then an adjacent-frame pixel-diff pass verifies them and rejects false positives from fast pans or dissolves. Persists a shot-list resource.
 - `export_edl` — Export persisted or inline keep-ranges as a CMX 3600 EDL
 
 | Parameter | Required | Type | Description |
 |-----------|----------|------|-------------|
 | `resource_id` | yes | string | Resource ID or URL to analyze |
-| `analysis_type` | no | string | `technical`, `vision_qa`, `transcribe`, `detect_segments`, `export_edl` (default: `technical`) |
+| `analysis_type` | no | string | `technical`, `vision_qa`, `transcribe`, `detect_segments`, `detect_shots`, `export_edl` (default: `technical`) |
 | `reference_prompt` | no | string | Original prompt for vision_qa scoring |
 | `criteria` | no | string[] | Evaluation criteria: `style_consistency`, `prompt_match`, `artifacts`, `audio_quality`, `composition` |
 | `intent_checklist` | no | object | Production spec checklist (vision_qa video only). See below. |
@@ -565,6 +568,9 @@ Analyze media for technical properties, reusable transcript artifacts, rough-cut
 | `reel_name` | no | string | Reel identifier for CMX 3600 |
 | `frame_rate` | no | number | Override source fps during EDL export |
 | `include_audio` | no | boolean | Include audio tracks in EDL output when source audio exists |
+| `shot_detect_threshold` | no | number | `detect_shots`: ffmpeg scene-score threshold (0-1). Lower over-proposes candidate cuts for the verification pass to filter. |
+| `min_shot_frames` | no | integer | `detect_shots`: minimum frames a shot may have. Candidates closer than this to a neighbor or to the range edges are dropped. |
+| `verify_shots` | no | boolean | `detect_shots`: run the adjacent-frame pixel-diff verification pass that rejects false positives (fast pans, dissolves). Disable only for fast iteration; never the production default. |
 
 **`intent_checklist` keys** (all optional):
 - `text_overlays` — `[{"text": "Seoul, 1987", "start_sec": 1, "end_sec": 6}]` — verify text appears only in its window
@@ -616,6 +622,22 @@ Returns a primary `resource_id` for the transcript JSON resource plus `metadata.
 }
 ```
 
+**Example — Detect shots (pixel-driven cut detection):**
+```json
+{
+  "name": "analyze_media",
+  "arguments": {
+    "resource_id": "<resource-id>",
+    "analysis_type": "detect_shots",
+    "shot_detect_threshold": 0.3,
+    "min_shot_frames": 6,
+    "verify_shots": true
+  }
+}
+```
+
+Returns a persisted shot-list resource identifying every detected cut. `remix_video` uses this same detection internally to hold shot boundaries during a reskin or recast.
+
 **Example — Export CMX 3600 EDL:**
 ```json
 {
@@ -661,7 +683,7 @@ Returns a primary `resource_id` for the transcript JSON resource plus `metadata.
 
 **Returns (vision_qa):** `score` (0–1), `passed` (bool), `issues` (array), `suggestions` (array), `checklist_results` (object, if checklist provided), `audio_summary` (string).
 
-> **Pricing:** `technical` = 1 credit, `vision_qa` = 3 credits, `transcribe` = 2 credits, `detect_segments` = 2 credits, `export_edl` = 1 credit.
+> **Pricing:** `technical` = 1 credit, `vision_qa` = 3 credits, `transcribe` = 2 credits, `detect_segments` = 2 credits, `detect_shots` = 2 credits, `export_edl` = 1 credit.
 
 **See also:** [vision\_qa\_example.py](../examples/python/vision_qa_example.py) — dedicated example covering generic QA, spec-driven checklists, and reading audio summaries.
 
@@ -896,9 +918,72 @@ All media references must be authorized Soundside resource UUIDs. Public Compose
 
 Reference generation is explicit-cast-only: Compose does not discover or invent cast members with a provider call. Cast voice namespaces are split: `narration_voice_id` selects a closed MiniMax voice for generated dialogue, while `native_video_voice_id` selects a closed Grok voice for native video speech; legacy `cast.voice_id` is rejected. Narration is bounded to 12,000 Unicode code points total, 2,000 per per-segment entry, and at most 15 unique in-range segment entries.
 
+Video segment controls are caller-authored: `first_frame` pins the opening image, `last_frame` pins the ending image, and `visual_references` supplies additional continuity references. Frame values must be authorized image resource UUIDs; `last_frame` is valid only on video segments and cannot be combined with `continues_from`. A segment may combine `first_frame`, `last_frame`, and visual references for the Grok reference-to-video path. Source-video edit/extension controls cannot be combined with an authored `last_frame`. The 15-entry narration bound does not limit the number of timeline segments.
+
+For reviewed existing footage, set `type="existing"`, an authorized video `resource_id`, and paired `source_start_sec`/`source_end_sec` values. Compose trims that exact source interval before normalizing video or extracting native audio. The interval determines `duration_sec`; if supplied explicitly, it must equal the interval length. Positive subsecond inserts are supported for existing footage, while generated clips retain their provider duration limits. Source intervals must fit within the actual video and be at most 30 seconds per segment.
+
 Reassembly has two exact shapes. Pass exactly one of `parent_resource_id` or `reuse_from` with `reassemble_only=true`, `plan={}`, and no `reuse_segments`; or pass a detailed plan and an exact all-index reuse map. Ordinary surgical revision sets `reassemble_only=false` and may reuse only a proper subset; empty means ordinary regeneration, while a full map must use reassembly.
 
 Revision has a server-reconstructed shortcut alongside those manual shapes: pass `revise_from=<parent UUID>` with `plan={}` and a `regenerate` list. The server rebuilds the plan and the reuse map from the owner's parent checkpoint — every segment not listed in `regenerate` reuses the parent's clip, and the parent's monolithic narration and music carry over as supplied audio (per-segment narration is re-synthesized, so even a `regenerate=[]` re-assembly of a per-segment-narration parent pays TTS again). An empty or omitted `regenerate` is a pure re-assembly of a possibly-failed own parent: zero segment generation, full QA and publication — the cheap recovery path when a run failed after all its segments completed. Optional `segment_overrides` edits only regenerated segments and requires a non-empty `regenerate`. Ownership checks are unchanged: `revise_from` is owner-only, and every reused clip and carried audio resource is authorized before any charge.
+
+---
+
+## remix_video
+
+Authenticated-credit-only asynchronous shot-for-shot video reskin or character recast ("remix") of a film you own. **Use this when you want to keep a source film's cuts, timing, and audio but change its visual world or swap a performer; use `compose_video` when you're building a new film from scratch.**
+
+Detects every cut in `source_resource_id` (via the same pixel-driven pass as `analyze_media(analysis_type="detect_shots")`), holds a written identity/world "bible" across all of them, regenerates each shot in a new visual style (`mode="reskin"`) or swaps the on-screen performer while keeping the source's background/lighting (`mode="recast"`), conforms every clip back to its exact original frame count, and re-marries the original soundtrack — so the delivered film has the same cuts, same beat timing, same audio as the source, just a different visual world (or cast).
+
+| Parameter | Required | Type | Description |
+|-----------|----------|------|-------------|
+| `source_resource_id` | yes | string | Owned video resource UUID to remix. |
+| `brief` | yes | string | Target world and cast, in prose (e.g. "A neon cyberpunk city, the mechanic is now a cybernetic courier"). Must be `""` when `revise_from` is set — the revision reuses the parent's bible. |
+| `rights_attested` | yes | boolean | Attests you hold the rights to remix the source. The call is refused when `false`. |
+| `mode` | no | string | `reskin` (default) — regenerate every shot from restyled keyframes; works on any shot, via Grok/MiniMax/Alibaba. `recast` — keep the source clip and swap the on-screen performer via Wan 2.2 Animate; keeps the source background/lighting, priced per source second instead of per action. |
+| `quality_profile` | no | string | `draft` (480p, no automatic repair), `standard` (720p, 1 repair wave, default), `premium` (1080p, 2 repair waves, pauses for confirmation after the proof). |
+| `estimate_only` | no | boolean | Probe + detect + plan + quote, persist the plan, and return the quote. Creates no parent, no admission slot, no root fee charge. |
+| `budget_cap_credits` | no | integer | Hard ceiling in credits. A priced quote above this is refused before any charge, with the quote returned in metadata. |
+| `range_start_sec` / `range_end_sec` | no | number | Remix only this sub-range of the source. |
+| `max_shot_seconds` | no | number | Actions longer than this are split at a motion-energy minimum (default 8.0). |
+| `reference_images` | no | string[] | Owned image resource UUIDs for additional cast/world continuity references. |
+| `engine_overrides` | no | object | Force an engine for one `action_id`, or every action via the key `"*"`. A bake-off-rejected engine is refused. |
+| `revise_from` | no | string | Owner-only parent remix UUID to revise; requires `brief=""`. |
+| `regenerate_actions` | no | array | Action IDs to redo with `revise_from`. Empty/omitted means pure re-assembly of the parent's already-accepted clips. |
+| `reassemble_only` | no | boolean | Rebuild from the parent's already-accepted clips without regenerating actions. |
+| `project_id` / `collection_id` / `collection_name` | no | string | Library placement, same conventions as other generation tools. |
+| `tags` | no | string[] | Tags applied to the resulting resources. |
+
+**Pricing and access:** Remix requires OAuth or API-key credits and is absent from x402 discovery/quotes. A successful root adds a five-credit orchestration fee; generation and repair children are separately itemized. Failed roots do not pay the orchestration fee.
+
+The initial response is `pending` with a parent `resource_id`. Completion/failure is pushed through `notifications/resources/updated`, alongside a side-by-side comparison and a JSON delivery report; after reconnecting, recover state with `lib_list`. No polling needed.
+
+**Example — quote only:**
+```json
+{
+  "name": "remix_video",
+  "arguments": {
+    "source_resource_id": "<uuid>",
+    "brief": "A neon-drenched cyberpunk world",
+    "rights_attested": true,
+    "estimate_only": true
+  }
+}
+```
+
+**Example — run it:**
+```json
+{
+  "name": "remix_video",
+  "arguments": {
+    "source_resource_id": "<uuid>",
+    "brief": "A neon-drenched cyberpunk world",
+    "mode": "reskin",
+    "quality_profile": "standard",
+    "rights_attested": true,
+    "budget_cap_credits": 5000
+  }
+}
+```
 
 ---
 
