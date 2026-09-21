@@ -130,7 +130,7 @@
       "tool": "create_audio"
     }
   ],
-  "lane_projection_sha256": "d6d12c7b5529acb9ecea7a8d93aeafce6c52eb9a1ecfb1a2f764c78cb589ab9f",
+  "lane_projection_sha256": "68eae27a2de6f6cc6850fc6ddc9d45d7a1b6664d3392060230349c980dc3c75c",
   "pricing_policy": {
     "compose_child_calls_itemized": true,
     "compose_orchestration_success_credits": 5,
@@ -533,7 +533,8 @@
         "digital_human",
         "image_to_action",
         "character_swap",
-        "lip_replacement"
+        "lip_replacement",
+        "source_edit"
       ],
       "provider": "alibaba",
       "tool": "create_video"
@@ -837,7 +838,7 @@
       "train_adapter"
     ]
   },
-  "tool_schema_sha256": "d508f727ace5158bd5cb1143bbd48be7877d2b424782d529a1be3bba2eca177d",
+  "tool_schema_sha256": "7a710b0a48e56ca66006a3f38faa91a1561661425e80be6b5b2627e5f5039997",
   "tools": [
     {
       "annotations": {
@@ -8830,7 +8831,7 @@
         "title": "Remix Video"
       },
       "category": "composition",
-      "description": "Shot-for-shot video reskin or recast (\"remix\") of a film you own.\n\nDetects every cut in `source_resource_id`, holds a written identity/world contract (the \"bible\") across all of them, regenerates each shot in a new visual style (mode=\"reskin\") or swaps the on-screen performer while keeping the source's background/lighting (mode=\"recast\"), conforms every clip back to its exact original frame count, and re-marries the original soundtrack — so the delivered film has the same cuts, same beat timing, same audio as the source, just a different visual world (or cast).\n\nRequires `rights_attested=true`: you are attesting you hold the rights to remix the source. The call is refused otherwise.\n\nAsync: returns a pending resource_id immediately; the job runs in the background and a `notifications/resources/updated` push tells you when it (and its side-by-side comparison, and its JSON delivery report) are ready. No polling needed — but `lib_list` also works.\n\nQuote first: pass `estimate_only=true` to probe, detect shots, plan, price and return the quote (and a persisted shot-plan resource) WITHOUT creating a job or spending the root fee — useful before committing real budget. `budget_cap_credits` refuses the real call before any commitment if the priced quote exceeds it.\n\nRevision: pass `revise_from=<parent remix UUID>` (owner-only, requires `brief=\"\"`) with `regenerate_actions` naming which actions to redo; empty/omitted `regenerate_actions` means pure re-assembly of the parent's already-accepted clips.\n\nExample (quote only): remix_video(source_resource_id=\"<uuid>\", brief=\"A neon-drenched cyberpunk world\", rights_attested=true, estimate_only=true)\n\nExample (run it): remix_video(source_resource_id=\"<uuid>\", brief=\"A neon-drenched cyberpunk world\", mode=\"reskin\", quality_profile=\"standard\", rights_attested=true, budget_cap_credits=5000)\n",
+      "description": "Shot-for-shot video reskin or recast (\"remix\") of a film you own.\n\nDetects every cut in `source_resource_id`, holds a written identity/world contract (the \"bible\") across all of them, regenerates each shot in a new visual style (mode=\"reskin\") or swaps the on-screen performer while keeping the source's background/lighting (mode=\"recast\"), conforms every clip back to its exact original frame count, and re-marries the original soundtrack — so the delivered film has the same cuts, same beat timing, same audio as the source, just a different visual world (or cast).\n\nTwo recipes, chosen with `recipe`:\n- `recipe=\"source_edit\"` (default): each TRUE SHOT goes to a source-conditioned edit engine once, as its own frames plus one written instruction. The engine sees the real camera move, blocking and signage, so framing, beats and lettering come back near frame-exact. No keyframes — which is also why it costs roughly a third of the keyframe recipe. Every generated shot is then CHECKED against its own source frames, column by column (mouth, pose, people count, wardrobe, objects, setting, identity, lettering, subject scale), a failing shot is re-rolled from a fixed repair table on the profile's included waves, and the best take ships. It never pauses: a shot that still fails after the waves delivers anyway and is named in the report's `needs_review`.\n- `recipe=\"keyframe\"`: two restyled stills per action, interpolated by a keyframe video model, judged against the native frames and repaired. Slower and dearer, and it invents the motion between the two stills — but it is the path that does not need the source's own frames, and `engine_overrides` only applies here.\n\nRequires `rights_attested=true`: you are attesting you hold the rights to remix the source. The call is refused otherwise.\n\nAsync: returns a pending resource_id immediately; the job runs in the background and a `notifications/resources/updated` push tells you when it (and its side-by-side comparison, and its JSON delivery report) are ready. No polling needed — but `lib_list` also works.\n\nQuote first: pass `estimate_only=true` to probe, detect shots, plan, price and return the quote (and a persisted shot-plan resource) WITHOUT creating a job or spending the root fee — useful before committing real budget. It is cheap, not free: it pays for the probe, the shot detection and (source_edit only) a per-job-capped vision scan of the long takes, which is what makes the plan it returns the one the real run would execute; a run of the same source and range reuses that scan and pays nothing for it again. `budget_cap_credits` refuses the call before that scan spends anything, and again on the full quote before any commitment.\n\nRevision: pass `revise_from=<parent remix UUID>` (owner-only, requires `brief=\"\"`) with `regenerate_actions` naming which actions to redo; empty/omitted `regenerate_actions` means pure re-assembly of the parent's already-accepted clips. A revision always keeps the parent's recipe.\n\nExample (quote only): remix_video(source_resource_id=\"<uuid>\", brief=\"A neon-drenched cyberpunk world\", rights_attested=true, estimate_only=true)\n\nExample (run it): remix_video(source_resource_id=\"<uuid>\", brief=\"A neon-drenched cyberpunk world\", mode=\"reskin\", quality_profile=\"standard\", rights_attested=true, budget_cap_credits=5000)\n\nExample (the older keyframe recipe): remix_video(source_resource_id=\"<uuid>\", brief=\"A neon-drenched cyberpunk world\", recipe=\"keyframe\", rights_attested=true)\n",
       "execution": "pending",
       "inputSchema": {
         "additionalProperties": false,
@@ -8893,25 +8894,32 @@
               }
             ],
             "default": null,
-            "description": "Force an engine for one action_id, or every action via the key \"*\". A bake-off-rejected engine (grok_edit, wan_vace) is refused with INVALID_PARAMS.",
+            "description": "Force an engine for one action_id, or every action via the key \"*\". recipe='keyframe' only — refused with INVALID_PARAMS on a source-edit job, which has exactly one engine. A bake-off-rejected engine (grok_edit) and wan3_edit (the source-edit recipe's own engine) are both refused. wan_vace is policy-gated (RemixEnginePolicy.vace_scope) rather than rejected: an explicit override here still honours it.",
             "title": "Engine Overrides"
           },
           "estimate_only": {
             "default": false,
-            "description": "Probe + detect + plan + quote, persist the plan, and return the quote. Creates no parent, no admission slot, no root fee charge.",
+            "description": "Probe + detect + plan + quote, persist the plan, and return the quote. Creates no parent, no admission slot, no root fee charge. NOT FREE: it pays for the probe, the shot detection, and — on the source_edit recipe — a capped scan of the long takes to find where they change place or wardrobe, which is what makes the returned plan the one a real run would execute. That scan is bounded per job and is reused by a later run of the same source and range, so it is paid once. `budget_cap_credits` is checked before the scan runs.",
             "title": "Estimate Only",
             "type": "boolean"
           },
           "max_shot_seconds": {
-            "default": 8.0,
-            "description": "Actions longer than this are split at a motion-energy minimum.",
-            "exclusiveMinimum": 0,
-            "title": "Max Shot Seconds",
-            "type": "number"
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Per-action duration ceiling. Omit to take the recipe's own default: 4.0s for recipe='keyframe' (so no action is long enough for a first/last-frame engine to invent unrelated content mid-clip), 15.0s for recipe='source_edit' (wan3.0-video's per-call maximum — the engine sees the source throughout, so there is nothing to invent, and a longer shot is divided into provider chunks rather than cut). A larger value on recipe='source_edit' is CLAMPED to that maximum and the quote says so, rather than being refused.",
+            "title": "Max Shot Seconds"
           },
           "mode": {
             "default": "reskin",
-            "description": "'reskin' (default): regenerate every shot from restyled keyframes — the universal path, works on any shot. 'recast': keep the source clip and swap the on-screen performer via Wan 2.2 Animate — keeps the source background/lighting, costs per source second instead of per action.",
+            "description": "What changes. 'reskin' (default): replace the world and the cast. 'recast': keep the source world and lighting and swap only the on-screen performer. Independent of `recipe`, which decides HOW each shot is regenerated.",
             "enum": [
               "reskin",
               "recast"
@@ -8934,7 +8942,7 @@
           },
           "quality_profile": {
             "default": "standard",
-            "description": "Resolution and repair-budget tier: draft (480p, no automatic repair), standard (720p, 1 repair wave), premium (1080p, 2 repair waves, pauses for confirmation after the proof).",
+            "description": "Resolution and repair-budget tier: draft (480p, no automatic repair), standard (720p, 1 repair wave), premium (1080p, 2 repair waves). Every profile runs to completion unattended; none of them pauses for confirmation.",
             "enum": [
               "draft",
               "standard",
@@ -8976,6 +8984,16 @@
             "description": "Re-verify, assemble, compare and report from an existing checkpoint; no generation. Mutually exclusive with `revise_from`.",
             "title": "Reassemble Only",
             "type": "boolean"
+          },
+          "recipe": {
+            "default": "source_edit",
+            "description": "How each shot is regenerated. 'source_edit' (default): one source-conditioned edit call per true shot — the shot's own frames go to the engine with one written instruction, so the real camera move, blocking and sign lettering come back near frame-exact. No keyframes, and no 4s action cap (a shot over the engine's 15s per-call maximum is split into provider chunks, not cuts). Each shot is then checked column-by-column against its own source frames, failing shots are re-rolled from a fixed repair table within a quoted reserve, and the best take ships — unattended, and it always delivers. 'keyframe': the older recipe — two restyled stills per action, interpolated by a keyframe video model, judged and repaired. Dearer and it invents the motion between the stills, but it needs no source-conditioned engine, and `engine_overrides` applies only to it.",
+            "enum": [
+              "source_edit",
+              "keyframe"
+            ],
+            "title": "Recipe",
+            "type": "string"
           },
           "reference_images": {
             "anyOf": [
