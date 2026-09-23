@@ -81,6 +81,48 @@ Reviewed against the source: the automated report flagged knife handling and fac
 
 The initial delivery failed during assembly, so its service fee was waived. A pure reassembly reused all generated footage and had no transformation service fee. Processing was charged. One credit is US $0.01; source creation is excluded and unused allowance is not charged. This is one example's settled cost, not a price guarantee.
 
+### Special delivery
+
+**20 seconds · Recast · Standard**
+
+A silver-haired courier takes over an original briefcase scene. A new performer, the same setting, and the original soundtrack.
+
+[Play the synchronized comparison](https://www.soundside.ai/features/recast#courier) · [Direct comparison video](https://www.soundside.ai/r/5oXE11lPVzTfqhoh7FUyTh) · [Recast film](https://www.soundside.ai/r/1kbkweZJRHJeNybqnx0qMa) · [Original source](https://www.soundside.ai/r/7WfBrY8yfvvxF6ZpHyHqYp)
+
+**Original left · Recast right. Watch with sound.** Original scene and source audio generated for Soundside. This example uses the opening 20 seconds of the 60.8-second source.
+
+<details>
+<summary>Exact submitted creative brief</summary>
+
+Recast the courier as Silver-Haired Courier, an original fictional woman in her late sixties with short cropped silver hair, warm brown skin, expressive arched eyebrows, fine laugh lines, and a determined, mischievous facial expression. Preserve the original plot, every action and physical interaction, every shot and cut, the camera movement, framing, pacing, source soundtrack, and setting. The replacement wears exactly the source character's wardrobe at each moment. Keep all props, including the briefcase, in the same hands and positions. Preserve the source film's visual style and existing lettering; add no signs, captions, logos, or people.
+
+</details>
+
+Settings: `mode="recast"`, `recipe="source_edit"`, `quality_profile="standard"`, `range_start_sec=0`, `range_end_sec=20`. Delivered at **1280 × 720, 24 fps**.
+
+The final face revision preserves the blink, head turn and changing background without the previous version's invented signs. Minor expression and crop differences remain. The final report passed its review and still notes minor hand anatomy and texture differences around the briefcase at 6–9 and 10–13 seconds.
+
+[Play the full prior/revised comparison](https://www.soundside.ai/docs/recast#courier-revision) · [Direct revision video](https://www.soundside.ai/r/55gIitvpuJ6E1xlRyPVZDr). Previous film left, final film right. Only **16.208333–18.25 seconds** changed (frames 389–437); the other six shots were reused. The original-source comparison above remains the primary fidelity check.
+
+| Actual costs of the runs used in this result | Credits (USD) |
+| --- | --- |
+| Initial full run | 441 ($4.41) |
+| Earlier three-shot revision | 253 ($2.53) |
+| Final face revision processing | 73 ($0.73) |
+| Final face revision service fee | 200 ($2.00) |
+| Initial run + revisions | 967 ($9.67) |
+| Quote analysis, separate from the run | 3 ($0.03) |
+| **Total for this result** | **970 ($9.70)** |
+
+The final face revision had a **1,556-credit ($15.56) ceiling** and settled at **273 credits ($2.73)**, including the $2 minimum service fee. Earlier service fees in this result were waived. Unused allowance is not charged; this settled cost is not a price guarantee.
+
+<details>
+<summary>Development costs and exclusions</summary>
+
+All native development runs and quote preparation, including discarded attempts, totaled **2,049 credits ($20.49)**. The 970-credit table counts the runs used in the displayed result. Both figures exclude source creation, separate diagnostic experiments and publication.
+
+</details>
+
 ## Import a direct video link
 
 Use the existing library tool first; `remix_video.source_resource_id` accepts an owned, completed video UUID, not a URL. Supply an explicit project to keep imports organized. Resource imports are paid library operations and subject to size and fetch limits.
@@ -222,6 +264,8 @@ The report includes:
 ## Revise selected shots or recover an assembly
 
 Use `revise_from` with an owned parent UUID and `brief=""`. A revision reuses the parent's plan and continuity design. Choose action IDs from its shot plan/report; they are not necessarily the same as detected shot numbers. A different cast or world needs a fresh brief and quote, rather than changing a revision's inherited design.
+
+Selected-shot Recast revisions may reuse approved source-aligned face references when the source, action and cast still match; source motion observations refresh, and a mismatch withholds motion.
 
 ```json
 {
