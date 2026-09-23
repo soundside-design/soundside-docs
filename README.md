@@ -2,12 +2,13 @@
 
 **AI Media Production Platform for Agents**
 
-Soundside exposes 20 MCP tools for generating, editing, composing, extracting, and analyzing media — images, video, audio, music, text, and business artifacts — plus LoRA adapter fine-tuning and server-side video composition. Connect any MCP client. OAuth/API-key credits cover all authenticated tools; the eligible subset also supports x402 USDC on Base without an account. Compose and X publishing are authenticated-credit only.
+Soundside exposes 21 MCP tools for generating, editing, composing, extracting, and analyzing media — images, video, audio, music, text, and business artifacts — plus LoRA adapter fine-tuning and server-side video composition. Connect any MCP client. OAuth/API-key credits cover all authenticated tools; the eligible subset also supports x402 USDC on Base without an account. Compose, Recast and X publishing are authenticated-credit only.
 
-> **Currency 2026-08 (2026-08-23)**
+> **Currency 2026-09 (2026-09-22)**
+> - **Recast:** signed 24-hour purchase quotes, bounded run spending, source/result comparisons and final motion review. See [Recast](./guides/recast.md) for authenticated-credit pricing.
 > - **Removed:** Luma (entirely) and Runway image/video generation. Runway is now audio-only — TTS and sound effects via `create_audio`.
 > - **Added:** Lyria 3 music generation (`create_music`), Grok TTS (`create_audio`), Grok per-second × resolution video pricing, Alibaba Wan 2.7 video models (international default), MiniMax H3 video adapter.
-> - Provider and pricing data below matches the live x402 catalog: `GET https://mcp.soundside.ai/api/x402/status`.
+> - For eligible x402 tools, fetch the live catalog: `GET https://mcp.soundside.ai/api/x402/status`. Authenticated-only Recast quotes come from `remix_video(estimate_only=true)`.
 
 ## Quick Start
 
@@ -24,7 +25,7 @@ POST https://mcp.soundside.ai/mcp
 {"jsonrpc":"2.0","id":"1","method":"tools/list","params":{}}
 ```
 
-## Tools (20)
+## Tools (21)
 
 ### Generation
 
@@ -42,6 +43,7 @@ POST https://mcp.soundside.ai/mcp
 | Tool | What It Does |
 |------|-------------|
 | `compose_video` | Server-side pipeline: enrich plan, generate assets in parallel, assemble with transitions, audio ducking, and overlays |
+| `remix_video` | Recast people or reskin a video with a signed purchase quote, retained source edit/audio, synchronized comparison and quality report |
 
 ### Editing
 
@@ -88,6 +90,7 @@ Soundside uses a credit system: **one credit = $0.01 USD**.
 - **AI generation** uses published metered rates based on provider cost with an approximately 10% platform margin unless a tool-specific flat fee is listed.
 - **Platform tools** (editing engine, library) are fixed-price: $0.01/call; vision QA is $0.03.
 - **Compose** adds a five-credit success-only orchestration fee and separately itemizes child calls. It requires OAuth/API-key credits and is not available through x402.
+- **Recast** adds a success-only service fee of $0.20 per transformed source second ($2 minimum) to itemized processing. The service fee is waived when final motion review is missing or fails, or unresolved quality findings remain; processing still applies. Quotes perform paid analysis. Recast uses authenticated credits, not x402. See [Recast pricing and purchase tokens](./guides/recast.md).
 - **X account operations** use authenticated credits and are not available through x402. Publish is 2 credits normally or 22 with a URL; replies use the same class, target operations cost 2 credits, and reads quote the requested-page ceiling but settle against the actual returned count (empty results cost 0). See [X account operations](./guides/x-publishing.md).
 - Every paid call receives a pre-execution estimate. The estimate is a **ceiling** — the actual charge is never more than the quote — and each paid tool call is settled exactly once.
 
@@ -96,7 +99,7 @@ Soundside uses a credit system: **one credit = $0.01 USD**.
 GET https://mcp.soundside.ai/api/x402/status
 ```
 
-This returns machine-readable per-tool, per-provider USDC prices for the x402 lane only. It does not publish the free tool or authenticated-credit-only Compose and X publishing. Prices are DB-driven and may change — **always check the endpoint rather than hardcoding**. For variable-priced tools the published amount is a ceiling quote (worst case), not the typical settled price — rows carry a `price_note` where this matters.
+This returns machine-readable per-tool, per-provider USDC prices for the x402 lane only. It does not publish the free tool or authenticated-credit-only Compose, Recast and X publishing. Prices are DB-driven and may change — **always check the endpoint rather than hardcoding**. For variable-priced tools the published amount is a ceiling quote (worst case), not the typical settled price — rows carry a `price_note` where this matters.
 
 ## x402: Pay-Per-Call with Crypto
 
@@ -114,12 +117,14 @@ See [x402 Guide](./guides/x402.md) for full setup.
 
 - **[Getting Started](./guides/getting-started.md)** — First MCP connection in 5 minutes
 - **[x402 Pay-Per-Call](./guides/x402.md)** — Crypto payments, no account needed
-- **[Tool Reference](./guides/tools.md)** — Detailed docs for all 20 tools
+- **[Tool Reference](./guides/tools.md)** — Detailed docs for all 21 tools
+- **[Recast a Video](./guides/recast.md)** — Paid quotes, repeat-safe purchases, cast/world transformations and quality review
 - **[Publish to X](./guides/x-publishing.md)** — Connect an X account and publish from MCP
 
 ## Examples
 
 - **[Python — API Key](./examples/python/soundside_client.py)** — Connect and generate with httpx
+- **[Python — Recast Quote and Purchase](./examples/python/recast_quote.py)** — Save a quote, purchase its token and recover job status
 - **[Python — x402](./examples/python/x402_example.py)** — Pay-per-call with USDC
 - **[TypeScript — API Key](./examples/typescript/soundside-client.ts)** — Node.js MCP client
 - **[OpenClaw Skill](./examples/openclaw/SKILL.md)** — One-line config for OpenClaw agents

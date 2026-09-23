@@ -1,6 +1,6 @@
 # Soundside — OpenClaw Skill
 
-Connect your OpenClaw agent to Soundside's 20 MCP tools for AI media generation, editing, composition, extraction, analysis, server-side composition, and LoRA adapter training.
+Connect your OpenClaw agent to Soundside's 21 MCP tools for AI media generation, editing, composition, extraction, analysis, server-side composition, and LoRA adapter training.
 
 ## Setup
 
@@ -44,8 +44,10 @@ Once connected, your agent has access to:
 - `create_text` — LLM completions with structured output (Grok, MiniMax, Vertex Gemini)
 - `create_artifact` — Charts, presentations, documents, diagrams (plotly, pptx, docx, weasyprint, mermaid, gamma)
 
-### Composition (1 tool)
+### Composition (2 tools)
 - `compose_video` — Authenticated-credit-only asynchronous composition using Grok visuals, MiniMax narration, and Lyria music. Stable is the default profile; plans are recursively strict and media inputs are authorized Soundside UUIDs. Public autonomy/task/hold-resume controls and URLs are unsupported. Child calls are itemized and a successful root adds a 5-credit orchestration fee. Use `lib_list` to recover state after reconnecting.
+
+- `remix_video` — Recast the cast or reskin the cast and world of an owned video while retaining its edit and original soundtrack. Paid `estimate_only=true` returns a 24-hour account-bound purchase token; resend the exact creative settings and token to purchase or retry the same job. Inspect the synchronized source/result comparison and delivery report. Authenticated credits only. See the [Recast guide](../../guides/recast.md).
 
 ### Editing (5 tools)
 - `edit_video` — Core video transforms: trim, concat, crossfade, speed, loop, color grading, subtitles, custom FFmpeg
@@ -256,7 +258,7 @@ On resume, load the state file and skip completed steps. All resource IDs are du
 
 ## 💰 x402 Pay-Per-Call (No Account Needed)
 
-Soundside supports [x402](https://www.x402.org/) machine-to-machine payments. Agents with an EVM wallet (Base USDC) can pay per x402-enabled tool call without any API key or account. `compose_video` and `publish_content` require authenticated credits:
+Soundside supports [x402](https://www.x402.org/) machine-to-machine payments. Agents with an EVM wallet (Base USDC) can pay per x402-enabled tool call without any API key or account. `compose_video`, `remix_video` and `publish_content` require authenticated credits:
 
 1. Call an x402-enabled tool without an `Authorization` header
 2. Server responds with `402 Payment Required` + payment details
@@ -319,11 +321,14 @@ Live pricing: `GET https://mcp.soundside.ai/api/x402/status`
 
 One credit is $0.01 USD. Published metered rates are based on provider cost with an approximately 10% platform margin unless a tool-specific flat fee is listed. Compose adds a five-credit success-only orchestration fee and separately itemizes child calls; it is not available through x402. X publishing also requires authenticated credits. Every paid call receives a pre-execution estimate and settles once.
 
-At the pro tier, `lib_list` alone is free, `compose_video` and `publish_content` are authenticated-credit only, and the remaining 17 tools are x402-eligible subject to their provider/mode lanes.
+At the pro tier, `lib_list` alone is free, `compose_video`, `remix_video` and `publish_content` are authenticated-credit only, and the remaining 17 tools are x402-eligible subject to their provider/mode lanes.
+
+Recast adds a success-only $0.20 per transformed source second service fee ($2 minimum) to metered processing. This fee is waived when final motion review is missing or fails, or unresolved quality findings remain; processing still applies. Quote analysis is paid separately. Pure reassembly has no transformation service fee.
 
 ## Docs
 
 - [Getting Started](https://github.com/soundside-design/soundside-docs/blob/main/guides/getting-started.md)
 - [Tool Reference](https://github.com/soundside-design/soundside-docs/blob/main/guides/tools.md)
+- [Recast a Video](https://github.com/soundside-design/soundside-docs/blob/main/guides/recast.md)
 - [Publish to X](https://github.com/soundside-design/soundside-docs/blob/main/guides/x-publishing.md)
 - [x402 Pay-Per-Call](https://github.com/soundside-design/soundside-docs/blob/main/guides/x402.md)
