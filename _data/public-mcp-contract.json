@@ -838,7 +838,7 @@
       "train_adapter"
     ]
   },
-  "tool_schema_sha256": "7a710b0a48e56ca66006a3f38faa91a1561661425e80be6b5b2627e5f5039997",
+  "tool_schema_sha256": "934312ad43616a56eaf1b6f8f1072a8ccb7199e90b7e8f8d79284525265a0ef7",
   "tools": [
     {
       "annotations": {
@@ -8831,7 +8831,7 @@
         "title": "Remix Video"
       },
       "category": "composition",
-      "description": "Shot-for-shot video reskin or recast (\"remix\") of a film you own.\n\nDetects every cut in `source_resource_id`, holds a written identity/world contract (the \"bible\") across all of them, regenerates each shot in a new visual style (mode=\"reskin\") or swaps the on-screen performer while keeping the source's background/lighting (mode=\"recast\"), conforms every clip back to its exact original frame count, and re-marries the original soundtrack — so the delivered film has the same cuts, same beat timing, same audio as the source, just a different visual world (or cast).\n\nTwo recipes, chosen with `recipe`:\n- `recipe=\"source_edit\"` (default): each TRUE SHOT goes to a source-conditioned edit engine once, as its own frames plus one written instruction. The engine sees the real camera move, blocking and signage, so framing, beats and lettering come back near frame-exact. No keyframes — which is also why it costs roughly a third of the keyframe recipe. Every generated shot is then CHECKED against its own source frames, column by column (mouth, pose, people count, wardrobe, objects, setting, identity, lettering, subject scale), a failing shot is re-rolled from a fixed repair table on the profile's included waves, and the best take ships. It never pauses: a shot that still fails after the waves delivers anyway and is named in the report's `needs_review`.\n- `recipe=\"keyframe\"`: two restyled stills per action, interpolated by a keyframe video model, judged against the native frames and repaired. Slower and dearer, and it invents the motion between the two stills — but it is the path that does not need the source's own frames, and `engine_overrides` only applies here.\n\nRequires `rights_attested=true`: you are attesting you hold the rights to remix the source. The call is refused otherwise.\n\nAsync: returns a pending resource_id immediately; the job runs in the background and a `notifications/resources/updated` push tells you when it (and its side-by-side comparison, and its JSON delivery report) are ready. No polling needed — but `lib_list` also works.\n\nQuote first: pass `estimate_only=true` to probe, detect shots, plan, price and return the quote (and a persisted shot-plan resource) WITHOUT creating a job or spending the root fee — useful before committing real budget. It is cheap, not free: it pays for the probe, the shot detection and (source_edit only) a per-job-capped vision scan of the long takes, which is what makes the plan it returns the one the real run would execute; a run of the same source and range reuses that scan and pays nothing for it again. `budget_cap_credits` refuses the call before that scan spends anything, and again on the full quote before any commitment.\n\nRevision: pass `revise_from=<parent remix UUID>` (owner-only, requires `brief=\"\"`) with `regenerate_actions` naming which actions to redo; empty/omitted `regenerate_actions` means pure re-assembly of the parent's already-accepted clips. A revision always keeps the parent's recipe.\n\nExample (quote only): remix_video(source_resource_id=\"<uuid>\", brief=\"A neon-drenched cyberpunk world\", rights_attested=true, estimate_only=true)\n\nExample (run it): remix_video(source_resource_id=\"<uuid>\", brief=\"A neon-drenched cyberpunk world\", mode=\"reskin\", quality_profile=\"standard\", rights_attested=true, budget_cap_credits=5000)\n\nExample (the older keyframe recipe): remix_video(source_resource_id=\"<uuid>\", brief=\"A neon-drenched cyberpunk world\", recipe=\"keyframe\", rights_attested=true)\n",
+      "description": "Shot-for-shot video reskin or recast (\"remix\") of a film you own.\n\nDetects cuts in an owned video, shares cast and setting references across shots, transforms the cast and world (mode=\"reskin\") or the performers alone (mode=\"recast\"), normalizes clips and verifies the delivered frame count, and restores the original soundtrack. It preserves edit boundaries and duration; fidelity of generated motion, mouths, hands and lettering is checked rather than guaranteed. It does not clone or replace voices. Import a direct video URL into your library with lib_manage(content_url=...) first.\n\nTwo recipes, chosen with `recipe`:\n- `recipe=\"source_edit\"` (default): edit each source shot with shared references, check it against source frames, and attempt targeted repairs within the quoted allowance. The best take is retained. Remaining shot defects are named in `needs_review`. The final synchronized source-left/result-right video is reviewed at 4 sampled frames/second in windows up to 10 seconds; its findings are in `delivery_review` and `unresolved_defects`. Review the full film yourself before publishing.\n- `recipe=\"keyframe\"`: restyled source stills per action, interpolated by a video model, judged and repaired. It generates motion between stills; `engine_overrides` applies only here.\n\nRequires `rights_attested=true`: you are attesting you hold the rights to remix the source. The call is refused otherwise.\n\nAsync: returns a pending resource_id immediately; the job runs in the background and a `notifications/resources/updated` push tells you when it (and its side-by-side comparison, and its JSON delivery report) are ready. No polling needed — but `lib_list` also works.\n\nQuote first: `estimate_only=true` returns metadata.quote.total_credits, metadata.shot_plan, metadata.quote_token and metadata.quote_expires_at. Source analysis (probe, cut detection, frame extraction and a capped visual scan) is billed separately even if you do not start a run. Buy the quote within 24 hours using the SAME source, brief and creative settings, quote_token, estimate_only=false, and budget_cap_credits no greater than the accepted quote. The token is account-bound, reuses the frozen plan without reanalysis, and retries return the same parent. Changed creative settings or expired/tampered tokens require a new quote. A concurrent purchase returns retryable QUOTE_BUSY.\n\nPricing: one credit is $0.01. Recast service is 20 credits per newly transformed source second, 200-credit minimum, plus metered processing. Unchanged and source-fallback footage is excluded; reassembly has no service fee. The service fee is waived when final review is incomplete or has unresolved defects. Processing still applies. The account must cover the quoted ceiling; each child operation reserves within that ceiling and unused allowance is not charged. The report separates processing_credits and service_fee_credits. Legacy jobs keep their accepted fee. Authenticated credits only; direct x402 payment is not supported.\n\nRevision: pass `revise_from=<parent remix UUID>` (owner-only, requires `brief=\"\"`) with `regenerate_actions` naming which actions to redo; empty/omitted `regenerate_actions` means pure re-assembly of the parent's already-accepted clips. A revision always keeps the parent's recipe.\n\nExample (quote only): remix_video(source_resource_id=\"<uuid>\", brief=\"A neon-drenched cyberpunk world\", rights_attested=true, estimate_only=true)\n\nExample (buy that quote): remix_video(source_resource_id=\"<uuid>\", brief=\"A neon-drenched cyberpunk world\", rights_attested=true, quote_token=\"<metadata.quote_token>\", budget_cap_credits=<metadata.quote.total_credits>)\n\nExample (the older keyframe recipe): remix_video(source_resource_id=\"<uuid>\", brief=\"A neon-drenched cyberpunk world\", recipe=\"keyframe\", rights_attested=true)\n",
       "execution": "pending",
       "inputSchema": {
         "additionalProperties": false,
@@ -8852,7 +8852,7 @@
               }
             ],
             "default": null,
-            "description": "Hard ceiling in credits. A priced quote above this is refused before any charge (INVALID_PARAMS), with the quote returned in metadata so you can see why.",
+            "description": "Hard run ceiling in credits. A quote above this is refused before generation (INVALID_PARAMS). Quote preparation has separately billed source analysis.",
             "title": "Budget Cap Credits"
           },
           "collection_id": {
@@ -8914,7 +8914,7 @@
               }
             ],
             "default": null,
-            "description": "Per-action duration ceiling. Omit to take the recipe's own default: 4.0s for recipe='keyframe' (so no action is long enough for a first/last-frame engine to invent unrelated content mid-clip), 15.0s for recipe='source_edit' (wan3.0-video's per-call maximum — the engine sees the source throughout, so there is nothing to invent, and a longer shot is divided into provider chunks rather than cut). A larger value on recipe='source_edit' is CLAMPED to that maximum and the quote says so, rather than being refused.",
+            "description": "Per-action duration ceiling. Omit to take the recipe's own default: 4.0s for recipe='keyframe' (so no action is long enough for a first/last-frame engine to invent unrelated content mid-clip), 15.0s for recipe='source_edit' (wan3.0-video's per-call maximum; a longer shot is divided into provider chunks rather than cut). A larger value on recipe='source_edit' is CLAMPED to that maximum and the quote says so, rather than being refused.",
             "title": "Max Shot Seconds"
           },
           "mode": {
@@ -8950,6 +8950,20 @@
             ],
             "title": "Quality Profile",
             "type": "string"
+          },
+          "quote_token": {
+            "anyOf": [
+              {
+                "maxLength": 2048,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Purchase token returned by estimate_only. Valid for 24 hours and this account's exact source, brief and creative settings. Reuses the frozen plan without reanalysis and enforces its price ceiling. Retrying the same token returns the same job, never a second generation. Omit for a fresh unquoted run. Not used with revisions.",
+            "title": "Quote Token"
           },
           "range_end_sec": {
             "anyOf": [
@@ -8987,7 +9001,7 @@
           },
           "recipe": {
             "default": "source_edit",
-            "description": "How each shot is regenerated. 'source_edit' (default): one source-conditioned edit call per true shot — the shot's own frames go to the engine with one written instruction, so the real camera move, blocking and sign lettering come back near frame-exact. No keyframes, and no 4s action cap (a shot over the engine's 15s per-call maximum is split into provider chunks, not cuts). Each shot is then checked column-by-column against its own source frames, failing shots are re-rolled from a fixed repair table within a quoted reserve, and the best take ships — unattended, and it always delivers. 'keyframe': the older recipe — two restyled stills per action, interpolated by a keyframe video model, judged and repaired. Dearer and it invents the motion between the stills, but it needs no source-conditioned engine, and `engine_overrides` applies only to it.",
+            "description": "How each shot is regenerated. 'source_edit' (default): one source-conditioned edit call per true shot — the shot's own frames go to the engine with one written instruction, using the real camera move, blocking and lettering as guidance. No 4s action cap (a shot over the engine's 15s per-call maximum is split into provider chunks, not cuts). Each shot is then checked column-by-column against its own source frames, failing shots are re-rolled from a fixed repair table within a quoted reserve, and the best take is retained, with remaining defects disclosed. 'keyframe': the older recipe — two restyled stills per action, interpolated by a keyframe video model, judged and repaired. Dearer and it invents the motion between the stills, but it needs no source-conditioned engine, and `engine_overrides` applies only to it.",
             "enum": [
               "source_edit",
               "keyframe"

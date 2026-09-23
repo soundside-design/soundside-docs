@@ -930,60 +930,63 @@ Revision has a server-reconstructed shortcut alongside those manual shapes: pass
 
 ## remix_video
 
-Authenticated-credit-only asynchronous shot-for-shot video reskin or character recast ("remix") of a film you own. **Use this when you want to keep a source film's cuts, timing, and audio but change its visual world or swap a performer; use `compose_video` when you're building a new film from scratch.**
+Authenticated-credit-only asynchronous Recast: transform the cast (`mode="recast"`) or cast and world (`mode="reskin"`) of an owned film while retaining its edit and original soundtrack. Use `compose_video` to make a new film from scratch. Recast does not clone voices or replace dialogue.
 
-Detects every cut in `source_resource_id` (via the same pixel-driven pass as `analyze_media(analysis_type="detect_shots")`), holds a written identity/world "bible" across all of them, regenerates each shot in a new visual style (`mode="reskin"`) or swaps the on-screen performer while keeping the source's background/lighting (`mode="recast"`), conforms every clip back to its exact original frame count, and re-marries the original soundtrack — so the delivered film has the same cuts, same beat timing, same audio as the source, just a different visual world (or cast).
+**Start with the [Recast guide](./recast.md)** for website steps, direct video-link import, signed quotes, retry behavior, pricing, quality reports and revisions. The [runnable Python example](../examples/python/recast_quote.py) saves a quote and purchases it in a separate command.
 
 | Parameter | Required | Type | Description |
 |-----------|----------|------|-------------|
-| `source_resource_id` | yes | string | Owned video resource UUID to remix. |
-| `brief` | yes | string | Target world and cast, in prose (e.g. "A neon cyberpunk city, the mechanic is now a cybernetic courier"). Must be `""` when `revise_from` is set — the revision reuses the parent's bible. |
-| `rights_attested` | yes | boolean | Attests you hold the rights to remix the source. The call is refused when `false`. |
-| `mode` | no | string | `reskin` (default) — regenerate every shot from restyled keyframes; works on any shot, via Grok/MiniMax/Alibaba. `recast` — keep the source clip and swap the on-screen performer via Wan 2.2 Animate; keeps the source background/lighting, priced per source second instead of per action. |
-| `quality_profile` | no | string | `draft` (480p, no automatic repair), `standard` (720p, 1 repair wave, default), `premium` (1080p, 2 repair waves, pauses for confirmation after the proof). |
-| `estimate_only` | no | boolean | Probe + detect + plan + quote, persist the plan, and return the quote. Creates no parent, no admission slot, no root fee charge. |
-| `budget_cap_credits` | no | integer | Hard ceiling in credits. A priced quote above this is refused before any charge, with the quote returned in metadata. |
-| `range_start_sec` / `range_end_sec` | no | number | Remix only this sub-range of the source. |
-| `max_shot_seconds` | no | number | Actions longer than this are split at a motion-energy minimum (default 8.0). |
-| `reference_images` | no | string[] | Owned image resource UUIDs for additional cast/world continuity references. |
-| `engine_overrides` | no | object | Force an engine for one `action_id`, or every action via the key `"*"`. A bake-off-rejected engine is refused. |
-| `revise_from` | no | string | Owner-only parent remix UUID to revise; requires `brief=""`. |
-| `regenerate_actions` | no | array | Action IDs to redo with `revise_from`. Empty/omitted means pure re-assembly of the parent's already-accepted clips. |
-| `reassemble_only` | no | boolean | Rebuild from the parent's already-accepted clips without regenerating actions. |
-| `project_id` / `collection_id` / `collection_name` | no | string | Library placement, same conventions as other generation tools. |
+| `source_resource_id` | yes | string | Owned completed video resource UUID. Import a direct video-file URL with `lib_manage` first; URLs are not accepted here. |
+| `brief` | yes | string | Desired cast and world. Must be `""` for `revise_from`, which inherits the parent's design. |
+| `rights_attested` | yes | boolean | Must be `true`: attests that you hold the rights to remix the source. |
+| `mode` | no | string | `reskin` (default) replaces cast and world; `recast` retains source setting/lighting and changes cast. |
+| `recipe` | no | string | `source_edit` (default) transforms source video shots; `keyframe` generates motion between restyled frames. |
+| `quality_profile` | no | string | `draft` (480p generation, no repair wave), `standard` (720p, one wave, default), `premium` (1080p, up to two waves). All run unattended. Delivery is conformed to the source geometry and timeline. |
+| `estimate_only` | no | boolean | Analyze, plan and price without starting a job. Analysis is paid. Fresh estimates return a signed purchase token, expiry, shot plan and itemized quote under `metadata`. |
+| `quote_token` | no | string | Buy an unexpired fresh quote using identical creative settings. Valid for 24 hours and bound to its account. A retry returns the same parent job. Not used with revisions or `estimate_only=true`. |
+| `budget_cap_credits` | no | integer | Maximum accepted run cost. An unaffordable quote is refused; analysis already performed is still paid. One credit is $0.01. |
+| `range_start_sec` / `range_end_sec` | no | number | Restrict processing to a source interval. |
+| `max_shot_seconds` | no | number | Optional generation-unit ceiling. Omit for the recipe default: 15 seconds for source editing or 4 seconds for keyframes. Provider chunks preserve the source editorial cut structure. |
+| `reference_images` | no | string[] | Up to eight owned image UUIDs for cast/style references. |
+| `engine_overrides` | no | object | Keyframe recipe only: force an allowed engine per action ID, or via `"*"`. |
+| `revise_from` | no | string | Owned parent remix UUID. Reuses its plan, recipe and continuity design; requires `brief=""`. |
+| `regenerate_actions` | no | string[] | With `revise_from`, action IDs to transform again. Empty/omitted means pure reassembly from accepted clips. |
+| `reassemble_only` | no | boolean | Rebuild an existing checkpoint without generation; mutually exclusive with `revise_from`. Prefer the documented `revise_from` + empty `regenerate_actions` workflow. |
+| `project_id` / `collection_id` / `collection_name` | no | string | Library placement. A new run creates an organized project if omitted; revisions retain the parent's placement. |
 | `tags` | no | string[] | Tags applied to the resulting resources. |
 
-**Pricing and access:** Remix requires OAuth or API-key credits and is absent from x402 discovery/quotes. A successful root adds a five-credit orchestration fee; generation and repair children are separately itemized. Failed roots do not pay the orchestration fee.
+**Pricing and access:** OAuth/API-key credits only; Recast is not available through x402. Processing is itemized. The success-only service fee is $0.20 per transformed source second, with a $2 minimum when a new transformation is delivered. This fee is waived when final motion review is missing or fails, or unresolved quality/parity findings remain. Processing still applies. Pure reassembly has no transformation service fee. The signed quote sets the run ceiling; unused allowance is not charged.
 
-The initial response is `pending` with a parent `resource_id`. Completion/failure is pushed through `notifications/resources/updated`, alongside a side-by-side comparison and a JSON delivery report; after reconnecting, recover state with `lib_list`. No polling needed.
+**Quote and purchase:**
 
-**Example — quote only:**
-```json
-{
-  "name": "remix_video",
-  "arguments": {
-    "source_resource_id": "<uuid>",
-    "brief": "A neon-drenched cyberpunk world",
-    "rights_attested": true,
-    "estimate_only": true
-  }
-}
-```
-
-**Example — run it:**
-```json
-{
-  "name": "remix_video",
-  "arguments": {
-    "source_resource_id": "<uuid>",
-    "brief": "A neon-drenched cyberpunk world",
-    "mode": "reskin",
+```python
+creative = {
+    "source_resource_id": "<owned-video-uuid>",
+    "brief": "An original silver-haired courier; preserve all actions and the source setting.",
+    "mode": "recast",
     "quality_profile": "standard",
-    "rights_attested": true,
-    "budget_cap_credits": 5000
-  }
 }
+estimate = client.call_tool("remix_video", {
+    **creative, "rights_attested": True, "estimate_only": True,
+    "budget_cap_credits": 2000,
+}, timeout=600)
+if estimate.get("success") is False:
+    raise RuntimeError(estimate.get("error", "Quote failed"))
+terms = estimate["metadata"]
+print(terms["quote"])  # Review the price before executing the purchase.
+
+run = client.call_tool("remix_video", {
+    **creative, "rights_attested": True, "estimate_only": False,
+    "quote_token": terms["quote_token"],
+    "budget_cap_credits": terms["quote"]["total_credits"],
+})
 ```
+
+Save the exact creative settings and token privately. Retrying the same valid token returns the same parent, even if it already completed or failed. `QUOTE_BUSY` is retryable with that token. Expiry or changed creative inputs require a new quote for a new run; use `lib_list` to recover an existing job. A new quote/purchase is a new authorization to spend.
+
+The initial purchase response is `pending` with a parent `resource_id`. Resource changes are pushed through `notifications/resources/updated`; recover on demand with `lib_list(entity_type="resources", resource_ids=[...])`. The run files its film, source-left/result-right synchronized comparison and JSON report under `6 Deliverables`. Outputs stay private until the owner chooses to share them.
+
+Inspect `delivery_review`, `needs_review` and `unresolved_defects` before using the film. Final comparison review covers the delivery in windows of at most 10 seconds at 4 fps, in addition to shot checks; automated checks can miss defects. Completed status means the job delivered, not that every quality criterion passed. The report separates `processing_credits`, `service_fee_credits` and accounted `credits_settled`; account usage records are authoritative.
 
 ---
 
