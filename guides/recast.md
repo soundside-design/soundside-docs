@@ -43,6 +43,44 @@ Requesting a quote performs paid analysis: probing, cut detection, and a bounded
 
 **Recast currently uses authenticated account credits only.** OAuth and API keys are supported. Wallet sign-in/funding does not make Recast a per-run x402 purchase: `remix_video` is not in the x402 lane. The x402 pricing catalog therefore does not contain its purchase quote. Use `estimate_only=true` for the actual Recast price.
 
+## Reviewed examples
+
+### Pasta on the Moon
+
+**8 seconds · Reskin · Standard**
+
+Dinner service has left Earth. A pasta chef and two guests move into a retro lunar diner with a new cast and the original soundtrack.
+
+[Play the synchronized comparison](https://www.soundside.ai/features/recast#lunar) · [Direct comparison video](https://www.soundside.ai/r/3G3R2CJ6ukk0oB0u2nlccS) · [Reskin film](https://www.soundside.ai/r/39ufhmBzClugoh8BsJ6tqm) · [Original source](https://www.soundside.ai/r/44h93JA3YlMb7BUUQxMJ2I)
+
+**Original left · Reskin right. Watch with sound.** Original scene and source audio generated for Soundside.
+
+Prompt summary: a cheerful lunar diner with a teal-shirted chef in a mustard apron, a silver-haired guest in plum, and an auburn-haired guest in navy. Keep the kitchen layout and pasta-making actions.
+
+<details>
+<summary>Exact submitted creative brief</summary>
+
+Turn this into a cheerful live-action retro-futurist lunar diner kitchen. Replace the chef with an original clean-shaven Black man in his thirties, close-cropped natural hair, a teal short-sleeved work shirt and a mustard apron. Replace the background diner initially on the left with an original adult woman with a short silver pixie cut and a plum jumpsuit; replace the diner initially on the right with an original adult man with curly auburn hair and a navy jumpsuit. All three have uncovered expressive human faces and natural bare hands. Restyle the existing kitchen with ivory wall panels, turquoise cabinetry and warm practical lighting; the existing windows reveal a still grey lunar landscape under a black sky. Preserve the room's layout, counter, doorway, window positions and cookware placement. Keep the wooden rolling pin, kitchen knife and pasta dough recognizably unchanged. Preserve every source action, hand grip, tool pickup and set-down, speaking mouth movement, laugh, body movement, camera move and timing, with the original soundtrack. Keep the same three people in their original roles and positions as the camera moves. Match the source's photographic realism. Add no helmets, gloves, extra people, floating objects, new windows, text, logos or signage.
+
+</details>
+
+Settings: `mode="reskin"`, `recipe="source_edit"`, `quality_profile="standard"`, full 8-second source. Delivered at **1280 × 720, 24 fps**.
+
+Reviewed against the source: the automated report flagged knife handling and facial expression; manual comparison found the same knife and reaching gesture in both films. The new chef's smile is slightly less pronounced. The report remains unchanged. Results vary with the footage and creative brief; inspect your comparison and report before using a result.
+
+| Actual example costs | Credits (USD) |
+| --- | --- |
+| Initial run ceiling, not the amount charged | 1,122 ($11.22) |
+| Reassembly ceiling, not the amount charged | 13 ($0.13) |
+| Settled initial processing | 251 ($2.51) |
+| Settled reassembly processing | 7 ($0.07) |
+| Settled service fee | 0 ($0.00) |
+| Initial run + reassembly | 258 ($2.58) |
+| Quote analysis, separate from the run | 3 ($0.03) |
+| **Total example spend** | **261 ($2.61)** |
+
+The initial delivery failed during assembly, so its service fee was waived. A pure reassembly reused all generated footage and had no transformation service fee. Processing was charged. One credit is US $0.01; source creation is excluded and unused allowance is not charged. This is one example's settled cost, not a price guarantee.
+
 ## Import a direct video link
 
 Use the existing library tool first; `remix_video.source_resource_id` accepts an owned, completed video UUID, not a URL. Supply an explicit project to keep imports organized. Resource imports are paid library operations and subject to size and fetch limits.
