@@ -174,7 +174,7 @@ The primary comparison shows the **original source on the left and the Recast re
 
 The report includes:
 
-- `frames_expected` and `frames_delivered`: exact timeline verification.
+- `frames_expected` and `frames_delivered`: output length verification. Matching counts do not prove that each generated frame follows the source motion.
 - `delivery_review`: final motion checks of the source/result comparison, sampled at 4 fps in windows of at most 10 seconds across the full delivery. This is an automated sampling check, not a guarantee that all defects were detected.
 - `needs_review` and `unresolved_defects`: findings that still require attention. A technically complete film can contain these.
 - `verdicts`, `parity` and `repairs`: shot checks and repair evidence where applicable.
