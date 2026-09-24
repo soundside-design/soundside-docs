@@ -1,0 +1,98 @@
+{
+  "name": "compose_video",
+  "arguments": {
+    "plan": {
+      "brief": "A stage robot reaches a button, switches on a spotlight, takes a run-up, jumps into the beam and lands in a bow.",
+      "style": "silent_cinematic",
+      "output": {
+        "duration_sec": 30,
+        "resolution": "1280x720",
+        "aspect_ratio": "16:9",
+        "fps": 24
+      },
+      "transitions": {
+        "type": "cut",
+        "duration_ms": 0
+      },
+      "audio_strategy": "scored",
+      "audio": {
+        "music": {
+          "resource_id": "00000000-0000-0000-0000-000000004001"
+        }
+      },
+      "overlays": [],
+      "auto_generate_references": false,
+      "title": "The Spotlight \u2014 selected edit",
+      "delivery_intent": "narrative film",
+      "segments": [
+        {
+          "id": "shot-1",
+          "type": "existing",
+          "resource_id": "00000000-0000-0000-0000-000000002001",
+          "source_start_sec": 0,
+          "source_end_sec": 5,
+          "duration_sec": 5,
+          "description": "Robot reaches the button",
+          "source_audio_volume": 0
+        },
+        {
+          "id": "shot-2",
+          "type": "existing",
+          "resource_id": "00000000-0000-0000-0000-000000002002",
+          "source_start_sec": 0,
+          "source_end_sec": 5,
+          "duration_sec": 5,
+          "description": "Finger visibly presses the button",
+          "source_audio_volume": 0
+        },
+        {
+          "id": "shot-3",
+          "type": "existing",
+          "resource_id": "00000000-0000-0000-0000-000000002003",
+          "source_start_sec": 0,
+          "source_end_sec": 5,
+          "duration_sec": 5,
+          "description": "Spotlight turns on after contact",
+          "source_audio_volume": 0
+        },
+        {
+          "id": "shot-4",
+          "type": "existing",
+          "resource_id": "00000000-0000-0000-0000-000000002004",
+          "source_start_sec": 0,
+          "source_end_sec": 5,
+          "duration_sec": 5,
+          "description": "Robot takes a run-up",
+          "source_audio_volume": 0
+        },
+        {
+          "id": "shot-5",
+          "type": "existing",
+          "resource_id": "00000000-0000-0000-0000-000000002005",
+          "source_start_sec": 0,
+          "source_end_sec": 5,
+          "duration_sec": 5,
+          "description": "Robot jumps into the beam",
+          "source_audio_volume": 0
+        },
+        {
+          "id": "shot-6",
+          "type": "existing",
+          "resource_id": "00000000-0000-0000-0000-000000002006",
+          "source_start_sec": 0,
+          "source_end_sec": 5,
+          "duration_sec": 5,
+          "description": "Robot lands and bows",
+          "source_audio_volume": 0
+        }
+      ]
+    },
+    "quality_profile": "stable",
+    "image_candidates": 1,
+    "video_candidates": 1,
+    "qa": true,
+    "qa_policy": "gate",
+    "evaluation_mode": "full",
+    "allow_degraded_output": false
+  }
+}

@@ -92,7 +92,7 @@ Soundside uses a credit system: **one credit = $0.01 USD**.
 - **Compose** adds a five-credit success-only orchestration fee and separately itemizes child calls. It requires OAuth/API-key credits and is not available through x402.
 - **Recast** adds a success-only service fee of $0.20 per transformed source second ($2 minimum) to itemized processing. The service fee is waived when final motion review is missing or fails, or unresolved quality findings remain; processing still applies. Quotes perform paid analysis. Recast uses authenticated credits, not x402. See [Recast pricing and purchase tokens](./guides/recast.md).
 - **X account operations** use authenticated credits and are not available through x402. Publish is 2 credits normally or 22 with a URL; replies use the same class, target operations cost 2 credits, and reads quote the requested-page ceiling but settle against the actual returned count (empty results cost 0). See [X account operations](./guides/x-publishing.md).
-- Every paid call receives a pre-execution estimate. The estimate is a **ceiling** — the actual charge is never more than the quote — and each paid tool call is settled exactly once.
+- Per-call estimates and itemized charges help track spending. A single-call price does not bound a multi-call workflow: Compose has no signed purchase quote or whole-workflow spending ceiling. Recast's separate signed-quote contract bounds its purchased run.
 
 **Live pricing is always available at:**
 ```
@@ -119,12 +119,14 @@ See [x402 Guide](./guides/x402.md) for full setup.
 - **[x402 Pay-Per-Call](./guides/x402.md)** — Crypto payments, no account needed
 - **[Tool Reference](./guides/tools.md)** — Detailed docs for all 21 tools
 - **[Recast a Video](./guides/recast.md)** — Paid quotes, repeat-safe purchases, cast/world transformations and quality review
+- **[Build an Original Short Film](./guides/original-stories.md)** — Assisted shot planning, storyboard review and accepted-footage assembly through MCP
 - **[Publish to X](./guides/x-publishing.md)** — Connect an X account and publish from MCP
 
 ## Examples
 
 - **[Python — API Key](./examples/python/soundside_client.py)** — Connect and generate with httpx
 - **[Python — Recast Quote and Purchase](./examples/python/recast_quote.py)** — Save a quote, purchase its token and recover job status
+- **[Original Story — Preview](./examples/original-story-preview.json)** and **[Selected Edit](./examples/original-story-edit.json)** — Standard 30-second Compose request templates; replace placeholder resource IDs before use
 - **[Python — x402](./examples/python/x402_example.py)** — Pay-per-call with USDC
 - **[TypeScript — API Key](./examples/typescript/soundside-client.ts)** — Node.js MCP client
 - **[OpenClaw Skill](./examples/openclaw/SKILL.md)** — One-line config for OpenClaw agents

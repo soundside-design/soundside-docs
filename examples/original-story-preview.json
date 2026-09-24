@@ -1,0 +1,190 @@
+{
+  "name": "compose_video",
+  "arguments": {
+    "plan": {
+      "brief": "Deliver a reviewed static storyboard preview: hold each supplied image for its stated duration, with cuts between images. Show first/middle/last poses and state changes as separate stills for review of staging, identity, geography, image order and editorial timing. Frozen poses and discrete state changes are the intended medium. This preview does not demonstrate continuous action, physical contact or finished-film performance. Intentionally silent: no audio track, music, narration, dialogue, ambience or effects are requested.",
+      "style": "silent_cinematic",
+      "output": {
+        "duration_sec": 30,
+        "resolution": "1280x720",
+        "aspect_ratio": "16:9",
+        "fps": 24
+      },
+      "transitions": {
+        "type": "cut",
+        "duration_ms": 0
+      },
+      "audio_strategy": "native",
+      "audio": {},
+      "overlays": [],
+      "auto_generate_references": false,
+      "title": "The Spotlight \u2014 storyboard preview",
+      "delivery_intent": "slideshow preview",
+      "segments": [
+        {
+          "id": "shot-1-first",
+          "type": "still",
+          "resource_id": "00000000-0000-0000-0000-000000001001",
+          "duration_sec": 2.5,
+          "description": "Static storyboard hold: shot-1-first, 2.5 seconds. Review the illustrated pose and state; continuous movement is not expected.",
+          "source_audio_volume": 0,
+          "ken_burns": {
+            "pan_direction": "center",
+            "zoom_start": 1,
+            "zoom_end": 1
+          }
+        },
+        {
+          "id": "shot-1-last",
+          "type": "still",
+          "resource_id": "00000000-0000-0000-0000-000000001002",
+          "duration_sec": 2.5,
+          "description": "Static storyboard hold: shot-1-last, 2.5 seconds. Review the illustrated pose and state; continuous movement is not expected.",
+          "source_audio_volume": 0,
+          "ken_burns": {
+            "pan_direction": "center",
+            "zoom_start": 1,
+            "zoom_end": 1
+          }
+        },
+        {
+          "id": "shot-2-first",
+          "type": "still",
+          "resource_id": "00000000-0000-0000-0000-000000001003",
+          "duration_sec": 2.5,
+          "description": "Static storyboard hold: shot-2-first, 2.5 seconds. Review the illustrated pose and state; continuous movement is not expected.",
+          "source_audio_volume": 0,
+          "ken_burns": {
+            "pan_direction": "center",
+            "zoom_start": 1,
+            "zoom_end": 1
+          }
+        },
+        {
+          "id": "shot-2-last",
+          "type": "still",
+          "resource_id": "00000000-0000-0000-0000-000000001004",
+          "duration_sec": 2.5,
+          "description": "Static storyboard hold: shot-2-last, 2.5 seconds. Review the illustrated pose and state; continuous movement is not expected.",
+          "source_audio_volume": 0,
+          "ken_burns": {
+            "pan_direction": "center",
+            "zoom_start": 1,
+            "zoom_end": 1
+          }
+        },
+        {
+          "id": "shot-3-first",
+          "type": "still",
+          "resource_id": "00000000-0000-0000-0000-000000001005",
+          "duration_sec": 2.5,
+          "description": "Static storyboard hold: shot-3-first, 2.5 seconds. Review the illustrated pose and state; continuous movement is not expected.",
+          "source_audio_volume": 0,
+          "ken_burns": {
+            "pan_direction": "center",
+            "zoom_start": 1,
+            "zoom_end": 1
+          }
+        },
+        {
+          "id": "shot-3-last",
+          "type": "still",
+          "resource_id": "00000000-0000-0000-0000-000000001006",
+          "duration_sec": 2.5,
+          "description": "Static storyboard hold: shot-3-last, 2.5 seconds. Review the illustrated pose and state; continuous movement is not expected.",
+          "source_audio_volume": 0,
+          "ken_burns": {
+            "pan_direction": "center",
+            "zoom_start": 1,
+            "zoom_end": 1
+          }
+        },
+        {
+          "id": "shot-4-first",
+          "type": "still",
+          "resource_id": "00000000-0000-0000-0000-000000001007",
+          "duration_sec": 2.5,
+          "description": "Static storyboard hold: shot-4-first, 2.5 seconds. Review the illustrated pose and state; continuous movement is not expected.",
+          "source_audio_volume": 0,
+          "ken_burns": {
+            "pan_direction": "center",
+            "zoom_start": 1,
+            "zoom_end": 1
+          }
+        },
+        {
+          "id": "shot-4-last",
+          "type": "still",
+          "resource_id": "00000000-0000-0000-0000-000000001008",
+          "duration_sec": 2.5,
+          "description": "Static storyboard hold: shot-4-last, 2.5 seconds. Review the illustrated pose and state; continuous movement is not expected.",
+          "source_audio_volume": 0,
+          "ken_burns": {
+            "pan_direction": "center",
+            "zoom_start": 1,
+            "zoom_end": 1
+          }
+        },
+        {
+          "id": "shot-5-first",
+          "type": "still",
+          "resource_id": "00000000-0000-0000-0000-000000001009",
+          "duration_sec": 2.5,
+          "description": "Static storyboard hold: shot-5-first, 2.5 seconds. Review the illustrated pose and state; continuous movement is not expected.",
+          "source_audio_volume": 0,
+          "ken_burns": {
+            "pan_direction": "center",
+            "zoom_start": 1,
+            "zoom_end": 1
+          }
+        },
+        {
+          "id": "shot-5-last",
+          "type": "still",
+          "resource_id": "00000000-0000-0000-0000-000000001010",
+          "duration_sec": 2.5,
+          "description": "Static storyboard hold: shot-5-last, 2.5 seconds. Review the illustrated pose and state; continuous movement is not expected.",
+          "source_audio_volume": 0,
+          "ken_burns": {
+            "pan_direction": "center",
+            "zoom_start": 1,
+            "zoom_end": 1
+          }
+        },
+        {
+          "id": "shot-6-first",
+          "type": "still",
+          "resource_id": "00000000-0000-0000-0000-000000001011",
+          "duration_sec": 2.5,
+          "description": "Static storyboard hold: shot-6-first, 2.5 seconds. Review the illustrated pose and state; continuous movement is not expected.",
+          "source_audio_volume": 0,
+          "ken_burns": {
+            "pan_direction": "center",
+            "zoom_start": 1,
+            "zoom_end": 1
+          }
+        },
+        {
+          "id": "shot-6-last",
+          "type": "still",
+          "resource_id": "00000000-0000-0000-0000-000000001012",
+          "duration_sec": 2.5,
+          "description": "Static storyboard hold: shot-6-last, 2.5 seconds. Review the illustrated pose and state; continuous movement is not expected.",
+          "source_audio_volume": 0,
+          "ken_burns": {
+            "pan_direction": "center",
+            "zoom_start": 1,
+            "zoom_end": 1
+          }
+        }
+      ]
+    },
+    "quality_profile": "stable",
+    "image_candidates": 1,
+    "video_candidates": 1,
+    "qa": true,
+    "qa_policy": "gate",
+    "evaluation_mode": "full",
+    "allow_degraded_output": false
+  }
+}
