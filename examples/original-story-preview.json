@@ -182,8 +182,8 @@
     "quality_profile": "stable",
     "image_candidates": 1,
     "video_candidates": 1,
-    "qa": true,
-    "qa_policy": "gate",
+    "qa": false,
+    "qa_policy": "advisory",
     "evaluation_mode": "full",
     "allow_degraded_output": false
   }

@@ -8,8 +8,47 @@ or dedicated storyboard-review interface on the website.
 
 Start with a small cast, one location and clear physical actions. The example
 below targets **30 seconds at 1280×720, 24 fps**, using six logical shots. It is a
-copyable planning example, not a claim that this story has passed a live quality
-review or that every run will produce an acceptable film.
+copyable planning example. The reviewed film below shows a separate executed
+version of the premise; its accepted edit is shorter than the planning target.
+
+## Reviewed example: The Grand Entrance
+
+**25.5 seconds · 1280×720 · 24 fps · Music and native effects**
+
+A tiny theatrical robot finds the light button on a dark stage, jumps onto it to
+switch on the spotlight, then takes its moment in the beam and bows.
+
+[Play the film on the website](https://www.soundside.ai/docs/original-stories#grand-entrance)
+· [Direct film video](https://www.soundside.ai/r/2RJe8QnqNi2ktaduggM9Uz/resource)
+
+[Play the full initial/revised comparison](https://www.soundside.ai/docs/original-stories#grand-entrance-revision)
+· [Direct comparison video](https://www.soundside.ai/r/6v17g2dubRRdCGqxyxjCvW/resource)
+
+**Initial left · Revised right.** Both films start together; cuts diverge after
+the trims. The initial film lasts 30.25 seconds and the revised film 25.5 seconds.
+The right panel then holds its final frame with a completion label. Only the
+revised soundtrack plays. The repaired shot is at **13.5–16.5 seconds** in the
+revision, corresponding to approximately **15.1–20.2 seconds** in the initial cut.
+
+This was an assisted production with review between stages:
+
+- Fifteen images were generated in total: ten distinct accepted images, reused
+  across thirteen storyboard holds, and five superseded images. The full board
+  was reviewed before broad motion generation, including the repaired frames.
+- Six initial five-second motion takes were generated, one per shot.
+- Direct inspection found a changing button housing. One targeted provider
+  video edit repaired that shot;
+  the other five motion takes were reused.
+- The 30-second draft was trimmed to a 25.5-second edit, using the observed
+  action and adding music while retaining selected native effects.
+
+The final film passed mechanical checks and automated review and was also
+inspected directly. A slightly floaty jump and minor spatial inconsistency
+between cuts remain. Automated review supports the editorial decision and
+still needs visual inspection. This example demonstrates an assisted workflow,
+not unattended or guaranteed film
+quality. The templates below remain illustrative 30-second plans rather than
+the exact requests used for this finished edit.
 
 ## 1. Author the beats before generating media
 
@@ -40,7 +79,11 @@ pressed button does not prove that generated motion will show correct contact.
 
 The self-contained [preview request](../examples/original-story-preview.json)
 is an ordinary `compose_video` call: twelve static still holds, each 2.5 seconds,
-with cut transitions and no audio. It labels the output as a storyboard preview.
+with cut transitions and no audio. It labels the output as a storyboard preview
+and explicitly requests a draft with `qa=false`, `qa_policy="advisory"` and
+`allow_degraded_output=false` from the outset. Review its stills and timing
+manually; technical checks still run, but this draft is not semantically
+approved motion.
 Replace its twelve numbered UUID placeholders with your reviewed image resource
 IDs before submitting. The placeholders are syntactically valid UUIDs but do
 not identify usable media.
@@ -49,7 +92,11 @@ For a middle hold, split that shot's five seconds among first/middle/last images
 each still must last at least one second. Keep every hold on the output frame
 grid (multiples of 1/24 second here), and keep the total at 30 seconds. Review the
 playable preview before motion generation. This pause is your workflow decision,
-not a server-side hold/resume feature. Preview execution and QA are billable.
+not a server-side hold/resume feature. Preview assembly is billable. Check the
+actual hold durations, image order and output geometry as well as the story.
+Use `qa=true`, `qa_policy="gate"` and `allow_degraded_output=false` for the final
+motion edit, as the selected-edit example does; draft review does not replace
+that gate or direct inspection of the film.
 
 ## 3. Generate one take, then inspect what happened
 
