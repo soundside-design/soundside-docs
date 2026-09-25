@@ -1,0 +1,57 @@
+{
+  "title": "The Chip Race — primary-source ledger",
+  "reporting_cutoff": "2026-09-24",
+  "scope": "Sources for the narrated claims and authored graphics. Company claims and developer-reported results remain attributed; this ledger does not establish universal performance parity with Nvidia.",
+  "sources": [
+    {
+      "id": "BIS22",
+      "publisher": "US Bureau of Industry and Security",
+      "date": "2022-10-07",
+      "url": "https://www.bis.gov/node/20292",
+      "supports": "Advanced-computing and semiconductor-manufacturing export controls and the stated US national-security rationale.",
+      "limits": "Announcement and effective dates differ; this is historical context, not a complete statement of current rules."
+    },
+    {
+      "id": "BIS23",
+      "publisher": "US Bureau of Industry and Security",
+      "date": "2023-10-17",
+      "url": "https://www.bis.gov/media/1332",
+      "supports": "The 2023 update to reinforce the 2022 controls.",
+      "limits": "A dated policy announcement, not evidence of its eventual effects."
+    },
+    {
+      "id": "MT",
+      "publisher": "Moore Threads",
+      "accessed": "2026-09-24",
+      "url": "https://en.mthreads.com/product/S5000",
+      "supports": "The company markets its S5000 as a GPU for AI training and inference.",
+      "limits": "Vendor product description, not an independently established performance comparison."
+    },
+    {
+      "id": "CM",
+      "publisher": "Huawei and SiliconFlow researchers",
+      "first_submitted": "2025-06-15",
+      "version_date": "2025-06-19",
+      "version": "arXiv 2506.12708v3",
+      "url": "https://arxiv.org/html/2506.12708v3",
+      "supports": "Developer description of CloudMatrix384, interconnecting 384 Ascend NPUs.",
+      "limits": "Developer-reported architecture and results; no blanket Nvidia parity claim."
+    },
+    {
+      "id": "HW26",
+      "publisher": "Huawei",
+      "date": "2026-09-17",
+      "url": "https://www.huawei.com/cn/news/2026/9/hc-wang-keynote",
+      "supports": "Huawei reports more than 1,000 Ascend 910C supernodes deployed.",
+      "limits": "Company-reported deployment count, not an independent audit."
+    },
+    {
+      "id": "HW25",
+      "publisher": "Huawei",
+      "date": "2025-09-18",
+      "url": "https://www.huawei.com/en/news/2025/9/hc-xu-keynote-speech",
+      "supports": "Huawei dates the Ascend 910 launch to 2019 and acknowledges a manufacturing process-node gap.",
+      "limits": "Company account of its history and engineering strategy, not an independent measurement of the current gap."
+    }
+  ]
+}
