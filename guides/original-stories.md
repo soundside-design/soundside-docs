@@ -1,15 +1,77 @@
-# Build an original short film, one reviewed stage at a time
+# Create an original film from a prompt or reviewed media
 
-This is an **assisted MCP workflow** for turning an original premise into a
-short film. You or your agent author the shot plan, review the storyboard,
-inspect generated takes, and choose the edit. Existing Soundside tools handle
-generation, assembly and checks. There is no new autonomous story-maker endpoint
-or dedicated storyboard-review interface on the website.
+Start a narrated documentary with a plain-language prompt in project chat, or
+send a sparse `compose_video` request from an agent. For direct editorial control,
+the assisted workflow below lets you author the shots, review a storyboard,
+inspect takes and select existing footage. Both use the existing Compose tool.
 
-Start with a small cast, one location and clear physical actions. The example
-below targets **30 seconds at 1280×720, 24 fps**, using six logical shots. It is a
-copyable planning example. The reviewed film below shows a separate executed
-version of the premise; its accepted edit is shorter than the planning target.
+## Start a documentary with one prompt
+
+On the website, open a project workspace and enter this in its chat:
+
+> Create a 75-second documentary about why bees matter to food production. Use
+> one continuous narrator, dated primary sources, readable evidence cards and
+> clearly labeled AI illustrations. Distinguish estimates from established facts.
+
+You do not need to write a script, shot list or JSON plan. The chat translates
+that request into Compose settings, including the requested total duration.
+An agent can call the same tool directly:
+
+```json
+{
+  "name": "compose_video",
+  "arguments": {
+    "plan": {
+      "brief": "Create an engaging documentary about why bees matter to food production. Use dated primary sources, readable evidence cards and clearly labeled AI illustrations. Distinguish estimates from established facts.",
+      "style": "documentary",
+      "output": {"duration_sec": 75}
+    },
+    "quality_profile": "stable",
+    "video_candidates": 1,
+    "qa": true,
+    "qa_policy": "gate",
+    "allow_degraded_output": false
+  }
+}
+```
+
+Omitting `audio`, `script` and `segments` is intentional. For a sparse documentary,
+Compose researches the brief, retains a dated dossier with provider-returned
+source citations, then plans evidence cards and illustrative B-roll around one
+continuous narration track. Narration defaults to MiniMax in `monolithic` mode.
+Explicit audio choices, supplied narration and authored timelines remain
+caller-controlled; the default does not replace them.
+
+Planning and review distinguish company claims, interpretation and uncertainty.
+Essential facts and source names belong on readable authored cards; generated
+B-roll is planned with AI illustration labels. Search citations record **provenance**;
+they are not independent verification that a source or claim is correct. Check
+the dated sources and watch the delivered film, including its factual wording,
+labels, sound and motion.
+
+Compose stops before visual generation if research returns no usable cited
+dossier or generated narration is missing, unmeasurable or too short for the
+requested runtime (more than five seconds of unspoken closing time). It also
+checks the final runtime and audio fit. With the gate settings above, failed
+quality review blocks accepted delivery. Work already performed remains
+billable. This 75-second request is a starting example, not a guarantee that
+every topic or duration will pass or that complex generated motion is reliable.
+
+Keep the returned parent `resource_id` and read it with `lib_list` after a
+notification or reconnect. Once planning is checkpointed, the research is at
+`metadata.composition.enriched_plan.reference_map.documentary_research`.
+Completed output metadata also exposes it at
+`metadata.composition.reference_map.documentary_research`, with `text`, `as_of`,
+`citations` (source `title` and `url`), and provider provenance. If a plan artifact
+was saved, `metadata.composition.plan_resource_id` identifies its JSON resource;
+the same ledger is inside `enriched_plan.reference_map.documentary_research`.
+These are returned metadata paths, not fields to copy into the public request.
+A run that fails before planning may have no ledger in its resource metadata.
+
+The reviewed films below were made with the earlier **assisted workflow**. They
+show inspected edits, not the result of this prompt-only example. The robot
+planning template targets **30 seconds at 1280×720, 24 fps**, using six logical
+shots; its separate accepted edit is shorter.
 
 ## Reviewed example: The Grand Entrance
 
@@ -50,9 +112,9 @@ not unattended or guaranteed film
 quality. The robot-story templates below remain illustrative 30-second plans rather than
 the exact requests used for this finished edit.
 
-## Reviewed documentary: The Chip Race
+## Reviewed assisted documentary: The Chip Race
 
-**88 seconds · 1280×720 · 24 fps · Continuous narration**
+**88 seconds · 1280×720 · 24 fps · Continuous narration · Earlier assisted workflow**
 
 **Reporting cutoff: 24 September 2026**
 
@@ -220,7 +282,7 @@ watching and listening to the complete film. Keep QA enabled and read its report
 including unresolved findings; a completed resource alone is not a creative
 quality endorsement.
 
-## Make a narration-led 60–90 second documentary
+## Assisted workflow: assemble a narration-led 60–90 second documentary
 
 For a short documentary, establish the evidence and continuous voice track before
 choosing the final picture edit. You or your agent research, author and review
@@ -389,6 +451,6 @@ Compose requires OAuth/API-key credits. A successful parent adds a five-credit
 orchestration fee; generation, evaluation and editing are charged separately.
 One credit is $0.01. Preview, final assembly and later revisions can each incur
 their own processing costs. There is no fixed price or guaranteed result for
-this 30-second example, and no Compose quote-token, reserved-budget or x402
+these workflows, and no Compose quote-token, reserved-budget or x402
 purchase flow. Track itemized usage as you proceed. Recast has a separate quoted
 purchase contract for transforming an existing source film.
