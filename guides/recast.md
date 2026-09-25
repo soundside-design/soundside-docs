@@ -20,6 +20,22 @@ Generation resolution is distinct from delivery geometry: clips are conformed to
 
 The source soundtrack stays in place. Recast does **not** replace dialogue, clone a voice or change the spoken language.
 
+## What a brief controls, and what it cannot
+
+The brief is distilled into a cast record during planning, before any frames are generated. For a `source_edit` recast, only two fields of that record reach the generation prompt:
+
+- **Identity** — age, face, hair, skin, build; and
+- **Wardrobe** — the garment, and only when the brief gives the character one.
+
+Everything else the analysis observes about the source stays true because the source frames themselves are being edited, not because the brief said so. Four consequences that are easy to get wrong:
+
+- **A physical state has no field of its own.** To put rain, water on the skin, blood or exhaustion into a recast, phrase it as face, hair or skin inside the identity sentence — "fair skin slick with rain, water running down his face and off his chin, blood smeared at his mouth, hollows of exhaustion under his eyes". Stated as a general remark about the scene, it is dropped without warning.
+- **Describing an outfit sets the wardrobe and stops the source's own clothing being reused.** That is what you want when the replacement should wear something specific — and then the garment must be described as it should look on the day, including that it is soaked, clinging or plain. Leave the wardrobe out entirely when the replacement should inherit exactly what the source performer wears, wet or torn as that may be.
+- **Prohibitions are not sent to the engine in this recipe.** A brief phrased as "never shirtless, no blood" suppresses nothing; it can only shape the character design. Express the wanted state positively instead.
+- **Expression follows the source performance, not the brief.** A replacement that smiles where the source is sombre is generation drift, not a prompt omission — it appears in the delivery report and the synchronized comparison, and a revision targets it.
+
+If the result matters, read the cast record after quoting: the run's metadata carries the distilled identity and wardrobe text, which is what the engine is actually told. A detail that is not in those two fields was never going to appear, no matter how the brief is worded.
+
 ## Start on the website
 
 1. Sign in at [soundside.ai/recast](https://soundside.ai/recast). Select an owned video, upload one or import a direct video-file link.
