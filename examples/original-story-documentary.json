@@ -1,0 +1,293 @@
+{
+  "name": "compose_video",
+  "arguments": {
+    "plan": {
+      "schema_version": "1.0",
+      "title": "The Chip Race — documentary assembly template",
+      "style": "documentary",
+      "delivery_intent": "news explainer",
+      "brief": "Assemble an 88-second technology explainer with one supplied narration track, authored source cards and clearly labeled generic AI illustrations. Preserve the reviewed source windows, fixed timings and labels. Generate no additional footage, narration, references or music.",
+      "output": {
+        "duration_sec": 88,
+        "resolution": "1280x720",
+        "fps": 24,
+        "aspect_ratio": "16:9"
+      },
+      "audio_strategy": "narrated",
+      "suppress_video_speech": true,
+      "auto_generate_references": false,
+      "grok_voice_references": false,
+      "transitions": {
+        "type": "cut",
+        "duration_ms": 0
+      },
+      "audio": {
+        "narration": {
+          "resource_id": "00000000-0000-0000-0000-000000006001",
+          "volume_db": 0
+        }
+      },
+      "segments": [
+        {
+          "id": "scene-1",
+          "type": "existing",
+          "resource_id": "00000000-0000-0000-0000-000000005001",
+          "source_start_sec": 3,
+          "source_end_sec": 8,
+          "duration_sec": 5,
+          "description": "Reviewed generic processor illustration; stable post-action interval.",
+          "source_audio_volume": 0
+        },
+        {
+          "id": "scene-2",
+          "type": "existing",
+          "resource_id": "00000000-0000-0000-0000-000000005002",
+          "source_start_sec": 0,
+          "source_end_sec": 4,
+          "duration_sec": 4,
+          "description": "Reviewed generic wafer-fabrication illustration, first interval.",
+          "source_audio_volume": 0
+        },
+        {
+          "id": "scene-3",
+          "type": "existing",
+          "resource_id": "00000000-0000-0000-0000-000000005003",
+          "source_start_sec": 0,
+          "source_end_sec": 7,
+          "duration_sec": 7,
+          "description": "Authored policy timeline with dates and primary-source attribution.",
+          "source_audio_volume": 0
+        },
+        {
+          "id": "scene-4",
+          "type": "existing",
+          "resource_id": "00000000-0000-0000-0000-000000005002",
+          "source_start_sec": 4,
+          "source_end_sec": 8,
+          "duration_sec": 4,
+          "description": "Reviewed generic wafer-fabrication illustration, second interval.",
+          "source_audio_volume": 0
+        },
+        {
+          "id": "scene-5",
+          "type": "existing",
+          "resource_id": "00000000-0000-0000-0000-000000005004",
+          "source_start_sec": 0,
+          "source_end_sec": 7,
+          "duration_sec": 7,
+          "description": "Authored hardware-category comparison with primary-source attribution.",
+          "source_audio_volume": 0
+        },
+        {
+          "id": "scene-6",
+          "type": "existing",
+          "resource_id": "00000000-0000-0000-0000-000000005005",
+          "source_start_sec": 0,
+          "source_end_sec": 4,
+          "duration_sec": 4,
+          "description": "Reviewed generic technician steadying a server tray; no completed installation implied.",
+          "source_audio_volume": 0
+        },
+        {
+          "id": "scene-7",
+          "type": "existing",
+          "resource_id": "00000000-0000-0000-0000-000000005006",
+          "source_start_sec": 0,
+          "source_end_sec": 8,
+          "duration_sec": 8,
+          "description": "Authored system schematic distinguishing a developer description from independent performance evidence.",
+          "source_audio_volume": 0
+        },
+        {
+          "id": "scene-8",
+          "type": "existing",
+          "resource_id": "00000000-0000-0000-0000-000000005007",
+          "source_start_sec": 4,
+          "source_end_sec": 8,
+          "duration_sec": 4,
+          "description": "Reviewed generic connected network hardware; no claim this depicts a named company.",
+          "source_audio_volume": 0
+        },
+        {
+          "id": "scene-9",
+          "type": "existing",
+          "resource_id": "00000000-0000-0000-0000-000000005005",
+          "source_start_sec": 4,
+          "source_end_sec": 8,
+          "duration_sec": 4,
+          "description": "Reviewed generic technician inspecting server hardware, second interval.",
+          "source_audio_volume": 0
+        },
+        {
+          "id": "scene-10",
+          "type": "existing",
+          "resource_id": "00000000-0000-0000-0000-000000005008",
+          "source_start_sec": 0,
+          "source_end_sec": 7,
+          "duration_sec": 7,
+          "description": "Authored dated company claim, explicitly identified as company-reported.",
+          "source_audio_volume": 0
+        },
+        {
+          "id": "scene-11",
+          "type": "existing",
+          "resource_id": "00000000-0000-0000-0000-000000005009",
+          "source_start_sec": 0,
+          "source_end_sec": 5,
+          "duration_sec": 5,
+          "description": "Authored constraints card separating sourced facts from qualitative questions.",
+          "source_audio_volume": 0
+        },
+        {
+          "id": "scene-12",
+          "type": "existing",
+          "resource_id": "00000000-0000-0000-0000-000000005010",
+          "source_start_sec": 2,
+          "source_end_sec": 5,
+          "duration_sec": 3,
+          "description": "Reviewed generic cooling hardware; no measured performance claim.",
+          "source_audio_volume": 0
+        },
+        {
+          "id": "scene-13",
+          "type": "existing",
+          "resource_id": "00000000-0000-0000-0000-000000005011",
+          "source_start_sec": 3.5,
+          "source_end_sec": 6.5,
+          "duration_sec": 3,
+          "description": "Reviewed generic engineer using a mouse; interface is illustrative, not benchmark data.",
+          "source_audio_volume": 0
+        },
+        {
+          "id": "scene-14",
+          "type": "existing",
+          "resource_id": "00000000-0000-0000-0000-000000005012",
+          "source_start_sec": 0,
+          "source_end_sec": 7,
+          "duration_sec": 7,
+          "description": "Authored historical timeline with dated primary sources.",
+          "source_audio_volume": 0
+        },
+        {
+          "id": "scene-15",
+          "type": "existing",
+          "resource_id": "00000000-0000-0000-0000-000000005004",
+          "source_start_sec": 0,
+          "source_end_sec": 6,
+          "duration_sec": 6,
+          "description": "Hardware-category card reprise; do not imply universal performance parity.",
+          "source_audio_volume": 0
+        },
+        {
+          "id": "scene-16",
+          "type": "existing",
+          "resource_id": "00000000-0000-0000-0000-000000005013",
+          "source_start_sec": 0,
+          "source_end_sec": 10,
+          "duration_sec": 10,
+          "description": "Authored closing question, reporting cutoff and readable source attribution.",
+          "source_audio_volume": 0
+        }
+      ],
+      "overlays": [
+        {
+          "text": "AI-GENERATED ILLUSTRATION • soundside.ai",
+          "segment_index": 0,
+          "position": "bottom_center",
+          "start_sec": 0,
+          "end_sec": 5,
+          "style": "caption",
+          "font_size": 24,
+          "font_color": "white"
+        },
+        {
+          "text": "AI-GENERATED ILLUSTRATION • soundside.ai",
+          "segment_index": 1,
+          "position": "bottom_center",
+          "start_sec": 0,
+          "end_sec": 4,
+          "style": "caption",
+          "font_size": 24,
+          "font_color": "white"
+        },
+        {
+          "text": "AI-GENERATED ILLUSTRATION • soundside.ai",
+          "segment_index": 3,
+          "position": "bottom_center",
+          "start_sec": 0,
+          "end_sec": 4,
+          "style": "caption",
+          "font_size": 24,
+          "font_color": "white"
+        },
+        {
+          "text": "AI-GENERATED ILLUSTRATION • soundside.ai",
+          "segment_index": 5,
+          "position": "bottom_center",
+          "start_sec": 0,
+          "end_sec": 4,
+          "style": "caption",
+          "font_size": 24,
+          "font_color": "white"
+        },
+        {
+          "text": "AI-GENERATED ILLUSTRATION • soundside.ai",
+          "segment_index": 7,
+          "position": "bottom_center",
+          "start_sec": 0,
+          "end_sec": 4,
+          "style": "caption",
+          "font_size": 24,
+          "font_color": "white"
+        },
+        {
+          "text": "AI-GENERATED ILLUSTRATION • soundside.ai",
+          "segment_index": 8,
+          "position": "bottom_center",
+          "start_sec": 0,
+          "end_sec": 4,
+          "style": "caption",
+          "font_size": 24,
+          "font_color": "white"
+        },
+        {
+          "text": "AI-GENERATED ILLUSTRATION • soundside.ai",
+          "segment_index": 11,
+          "position": "bottom_center",
+          "start_sec": 0,
+          "end_sec": 3,
+          "style": "caption",
+          "font_size": 24,
+          "font_color": "white"
+        },
+        {
+          "text": "AI-GENERATED ILLUSTRATION • Interface is not benchmark data",
+          "segment_index": 12,
+          "position": "bottom_center",
+          "start_sec": 0,
+          "end_sec": 3,
+          "style": "caption",
+          "font_size": 23,
+          "font_color": "white"
+        },
+        {
+          "text": "THE CHIP RACE",
+          "segment_index": 0,
+          "position": "top_center",
+          "start_sec": 0,
+          "end_sec": 5,
+          "style": "headline",
+          "font_size": 44,
+          "font_color": "white"
+        }
+      ]
+    },
+    "quality_profile": "stable",
+    "image_candidates": 1,
+    "video_candidates": 1,
+    "evaluation_mode": "full",
+    "qa": true,
+    "qa_policy": "gate",
+    "allow_degraded_output": false
+  }
+}

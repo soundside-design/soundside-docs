@@ -47,8 +47,57 @@ inspected directly. A slightly floaty jump and minor spatial inconsistency
 between cuts remain. Automated review supports the editorial decision and
 still needs visual inspection. This example demonstrates an assisted workflow,
 not unattended or guaranteed film
-quality. The templates below remain illustrative 30-second plans rather than
+quality. The robot-story templates below remain illustrative 30-second plans rather than
 the exact requests used for this finished edit.
+
+## Reviewed documentary: The Chip Race
+
+**88 seconds · 1280×720 · 24 fps · Continuous narration**
+
+**Reporting cutoff: 24 September 2026**
+
+A short explainer about export controls and China's developing GPU and
+AI-accelerator industry. Authored source graphics carry the evidence; generated
+B-roll is labeled as illustration. Company claims remain attributed, and the
+film does not claim blanket performance parity with Nvidia.
+
+[Play the documentary](https://www.soundside.ai/docs/original-stories#chip-race)
+· [Direct film video](https://www.soundside.ai/r/7Uxr4d6D5QJvPAtD3MWX9N/resource)
+
+[Play the full initial/revised comparison](https://www.soundside.ai/docs/original-stories#chip-race-revision)
+· [Direct comparison video](https://www.soundside.ai/r/3MWZoHkgFw0HuJFJMhbj8x/resource)
+
+**Initial left · Revised right.** Both films last 88 seconds, with the same
+narration and timing. Only **0–5 seconds** and **39–43 seconds** change.
+
+The assisted production used one 197-word MiniMax narration, six reviewed
+initial reference images and six initial B-roll takes. Two targeted video edits
+were attempted, followed by selection of clean source windows. The original and
+rejected full takes were preserved. Acceptance applies to the observed selected
+intervals; the full takes did not reliably carry out the intended contact actions.
+Seven authored card videos and the illustration windows form the 16-segment edit.
+
+The final film passed technical checks and four automated model reviews; its
+cards and cuts were also inspected directly. Minor AI stiffness and inconsistent
+server textures remain. The review supports this edit, not unattended factual
+verification or guaranteed complex motion.
+
+The [downloadable source ledger](../examples/documentary-sources.json) maps the
+claims and their limits to these six primary sources:
+
+- [BIS, 7 October 2022](https://www.bis.gov/node/20292): export-control announcement
+  and stated national-security rationale.
+- [BIS, 17 October 2023](https://www.bis.gov/media/1332): the follow-up controls.
+- [Moore Threads S5000 product page](https://en.mthreads.com/product/S5000), accessed
+  24 September 2026: a vendor description of a GPU for AI training and inference.
+- [CloudMatrix384 research paper, v3, 19 June 2025](https://arxiv.org/html/2506.12708v3):
+  developer-reported architecture using 384 Ascend NPUs, not an independent
+  across-the-board benchmark. The paper was first submitted on 15 June 2025.
+- [Huawei, 17 September 2026](https://www.huawei.com/cn/news/2026/9/hc-wang-keynote):
+  the company's claim of more than 1,000 Ascend 910C supernodes deployed, not an
+  independent audit.
+- [Huawei, 18 September 2025](https://www.huawei.com/en/news/2025/9/hc-xu-keynote-speech):
+  its account of the 2019 Ascend 910 launch and manufacturing constraints.
 
 ## 1. Author the beats before generating media
 
@@ -171,9 +220,95 @@ watching and listening to the complete film. Keep QA enabled and read its report
 including unresolved findings; a completed resource alone is not a creative
 quality endorsement.
 
+## Make a narration-led 60–90 second documentary
+
+For a short documentary, establish the evidence and continuous voice track before
+choosing the final picture edit. You or your agent research, author and review
+each stage; Compose assembles the supplied media. This is not one-click automatic
+fact-checking, and generated illustrations do not establish what happened in the
+real world.
+
+1. **Keep a primary-source ledger.** Record a source ID, publisher, publication or
+   version date, URL, the exact claim it supports and its limits. Set a reporting
+   cutoff. Map each narrated assertion and graphic to that ledger; distinguish
+   company-reported figures from independently checked results. Keep the ledger,
+   script and editorial notes beside the request, outside the strict public plan.
+2. **Record one continuous narrator.** Review the script, choose one MiniMax voice,
+   then submit the whole text with `create_audio(provider="minimax", mode="tts")`.
+   Listen to the resulting audio from start to finish. Use
+   `analyze_media(analysis_type="transcribe")` for timing and a transcript, but
+   check questionable names against the audio: a transcription error alone does
+   not prove a pronunciation error. Measure the recording before fixing the
+   film's duration; leave room for the final sentence and its tail.
+3. **Prepare pictures that support the voice.** Review first frames for every
+   generated B-roll shot together, checking hardware, hands, geography and the
+   intended action before purchasing motion. Generate one initial candidate per
+   shot and inspect the actual footage. First-frame guidance does not make
+   intricate installation, plugging or other contact motion reliable. If a take
+   fails, keep a useful observed interval or make one diagnosed repair; describe
+   only what the selected interval shows. Author charts, diagrams, dates and
+   citations as deliberate graphics rather than asking a video model to invent
+   factual text. Import completed graphics and turn them into timed card videos.
+4. **Lock an edit from existing resource windows.** The
+   [88-second documentary request](../examples/original-story-documentary.json)
+   uses six illustration clips and seven authored card videos across **16 existing
+   segments**, plus one narration resource. Repeated UUID placeholders deliberately
+   reuse the same source. Replace the thirteen distinct video UUIDs and the audio
+   UUID with completed resources your account may use; these numbered placeholders
+   are valid UUID syntax, not usable media. Check every selected start/end against
+   its source. The durations total 88 seconds at 24 fps; fit them to your own
+   reviewed narration instead of assuming any script takes 88 seconds. The template
+   follows the reviewed documentary's edit structure but contains no usable media.
+5. **Normalize and label before delivery.** Prepare a narration master at an
+   explicit sample rate, channel count and loudness target, then inspect the
+   exported file and listen again. For example, use 48 kHz mono, a −16 LUFS target
+   and a −1.5 dBTP true-peak limit for a speech-led web edit; verify the measured
+   result rather than assuming the requested settings were achieved. This example
+   mutes clip sound with `source_audio_volume=0`, supplies no music and retains one
+   narration track. Its segment-local overlays label every generated illustration
+   for that interval's full duration. Keep that label visible after trims and do
+   not present synthetic B-roll as footage of a named company or event. Put readable
+   source attribution and dates on the authored cards.
+6. **Review the actual delivered film.** Keep `qa=true`, `qa_policy="gate"` and
+   `allow_degraded_output=false`. Inspect the native output with sound and read its
+   QA report; review suspicious motion frame by frame, all cuts, labels, graphics
+   and the final words. Check loudness, clipping, silence, speech intelligibility
+   and narration/picture alignment. Automated visual or audio review is not a
+   factual audit. Preserve acceptable media and repair only the observed defect,
+   then reassemble and compare the complete initial/revised films with changed
+   intervals identified.
+
+MiniMax's standard MP3, WAV, FLAC and PCM TTS sample rates top out at **44,100 Hz**;
+48 kHz delivery is a subsequent export/resampling step. In `create_audio`, use the
+existing public `sample_rate`, `channel` and `format` fields, for example
+`sample_rate=44100`, `channel=1`, `format="wav"`. Then normalize/export the completed
+resource to your delivery format and verify its actual audio properties. See the
+[MiniMax TTS reference](https://platform.minimax.io/docs/api-reference/speech-t2a-http).
+
+For **supplied narration**, the assembly plan uses only the resource and mix level:
+
+```json
+{
+  "audio_strategy": "narrated",
+  "audio": {
+    "narration": {
+      "resource_id": "00000000-0000-0000-0000-000000006001",
+      "volume_db": 0
+    }
+  }
+}
+```
+
+This is a plan fragment; use the complete linked request for submission. Do not
+attach `script`, `provider`, `voice_id`, `speed` or per-segment generation settings
+to that supplied narration. Those belong to the earlier generation request, not
+to reuse of its finished audio. Do not copy internal checkpoint fields into a
+public request. Preparation, attempted repairs, analysis and assembly are billable;
+the template is not a fixed-price production quote.
+
 ## Submit a saved request through MCP
 
-Download either JSON request above, replace its resource IDs, and review it before
+Download a JSON request above, replace its resource IDs, and review it before
 submitting. This script uses the public MCP SDK, with no Soundside backend imports.
 Install `mcp` and `httpx`, set `SOUNDSIDE_API_KEY` and `SOUNDSIDE_MCP_URL` (normally
 `https://mcp.soundside.ai/mcp`), then run it with the JSON file path. It submits
