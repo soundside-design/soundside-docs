@@ -36,6 +36,22 @@ Everything else the analysis observes about the source stays true because the so
 
 If the result matters, read the cast record after quoting: the run's metadata carries the distilled identity and wardrobe text, which is what the engine is actually told. A detail that is not in those two fields was never going to appear, no matter how the brief is worded.
 
+## Keeping another character unchanged
+
+A recast job re-synthesises **every action inside the interval it was given** — including actions assigned to a character marked for preservation. There is no setting that leaves one performer on screen untouched while another is replaced, and prose in the brief cannot achieve it either: the plan was already correct.
+
+So if the interval contains a character who must not change, do not include their shots. Run only the interval that belongs to the character you are replacing, and restore the original footage over the other character's shots when you assemble. The recast film is frame-aligned to the source, so the restored windows land exactly in place, and a film assembled this way keeps the original performer's footage rather than a re-rendering of it.
+
+Judge the restored windows at viewing size, and compare them with the source at the same instants. A frame-for-frame film that is re-encoded will not match byte for byte, so measure similarity (for example with PSNR) and include the replaced interval in the same measurement as a control: a healthy restore scores far above the replaced interval, which is what shows the difference is real rather than an artifact of measurement.
+
+## Changes that develop over time
+
+Some recasts need a change that happens *during* the scene — a character draining of colour as he dies, hair drying, a wound appearing. One brief cannot express this: the cast record is distilled once, before any frames are generated, and the identity sentence it produces holds for the whole run.
+
+Split it at an existing cut in the source and run the stretches as separate jobs, describing only where each stretch starts and ends. If the change is driven by the scene's own light, the frames supply most of it — a performer who seems to turn white as death approaches is often being caught by a growing pale backlight rather than losing skin colour — so it is worth checking the source before writing the brief, and spending the brief on the skin itself. Sampling a face crop's brightness and saturation across the source (for example with `signalstats`) shows which of the two is doing the work.
+
+Finally, judge every artifact at the size the audience will see it. A crop enlarged to 1:1 will show fused teeth, odd garment seams and melting detail on essentially any generated video; the same frame at playback width can be clean. Render at display width and enlarge *that* before deciding a piece is broken — as costly to reject a good deliverable as to ship a bad one.
+
 ## Start on the website
 
 1. Sign in at [soundside.ai/recast](https://soundside.ai/recast). Select an owned video, upload one or import a direct video-file link.
