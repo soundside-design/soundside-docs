@@ -845,7 +845,7 @@
       "train_adapter"
     ]
   },
-  "tool_schema_sha256": "9bb4d4c81074fd758e1cadbf457df24618ad0056bc179d564b6aa1c3fcaa3c3f",
+  "tool_schema_sha256": "060348a7ec936bddf2d3bddaebe912385085fcaeec227affd5f1a8b3c6afcd84",
   "tools": [
     {
       "annotations": {
@@ -2450,7 +2450,7 @@
                         "anyOf": [
                           {
                             "additionalProperties": false,
-                            "description": "Background music configuration.\n\n`volume_db` sets the music level relative to the other layers; the final\nmix is then normalized as a whole (see AudioSpec: -16 LUFS, -1 dBTP).",
+                            "description": "Background music configuration.\n\n`volume_db` sets the music level relative to the other layers; the final\nmix then gets one gain toward -16 LUFS integrated, of at most +12 dB, with\nits true peak kept at or below -1 dBTP (see AudioSpec).",
                             "properties": {
                               "fade_out_sec": {
                                 "default": 2.0,
@@ -2782,7 +2782,7 @@
                   }
                 ],
                 "default": null,
-                "description": "Audio mixing strategy. When unset it is inferred from the plan's audio after enrichment (music that enrichment adds because the brief asks for it counts): 'native' with no narration or music, 'narrated' with narration only, 'full_mix' with narration and music, and 'scored' with music only. Since contract 1.2, a music-only plan in which at least one `video` segment explicitly sets source_audio_volume > 0 is inferred 'full_mix' instead: those segments keep Grok's native audio under the score, and every `video` segment that leaves source_audio_volume unset is set to 0.0 (a silent clip). `existing` segments never trigger this. Under 'narrated' and 'full_mix', suppress_video_speech (default true) asks Grok for ambience and action sounds without dialogue or music. An explicit strategy is never overridden; an explicit 'scored' makes every Grok clip silent, whatever its source_audio_volume."
+                "description": "Audio mixing strategy. When unset it is inferred from the plan's audio after enrichment (music that enrichment adds because the brief asks for it counts): 'native' with no narration or music, 'narrated' with narration only, 'full_mix' with narration and music, and 'scored' with music only. Since contract 1.2, a music-only plan in which at least one `video` segment explicitly sets source_audio_volume > 0 is inferred 'full_mix' instead: those segments keep Grok's native audio under the score, and every `video` segment that leaves source_audio_volume unset is set to 0.0 (a silent clip). `existing` segments never trigger this. Under 'narrated' and 'full_mix', suppress_video_speech (default true) asks Grok for ambience and action sounds without dialogue or music. An explicit strategy is never overridden; an explicit 'scored' makes every Grok clip silent, whatever its source_audio_volume. An explicit 'full_mix' does not silence unset video segments: they keep their default source_audio_volume (0.3, or the style preset's value on segments enrichment authors), and Grok generates native audio for every segment whose value is above 0."
               },
               "auto_generate_references": {
                 "default": true,
@@ -3641,7 +3641,7 @@
                         },
                         "source_audio_volume": {
                           "default": 0.3,
-                          "description": "Volume for retained source audio (0.0=stripped, 0.3=ambient bed, 1.0=full). Also drives Grok's `generate_audio` on this segment: 0.0 means finishing throws the native track away, so compose asks Grok for a SILENT clip (generate_audio=False) rather than paying to generate audio it will discard; a value > 0 keeps generate_audio True, except under audio_strategy='scored', where every Grok clip is silent. To keep Grok's native audio (ambience, action sounds) under a music score, set a value > 0 on the video segments and leave audio_strategy unset (a music-only plan is then inferred 'full_mix'), or set audio_strategy='full_mix'. When unset: 0.3, except that enrichment writes 0.8 under 'native', writes 0.0 to the video segments of a plan it infers 'full_mix' for music plus native audio, and uses the style preset's value on segments it authors from a brief.",
+                          "description": "Volume for retained source audio (0.0=stripped, 0.3=ambient bed, 1.0=full). Also drives Grok's `generate_audio` on this segment: 0.0 means finishing throws the native track away, so compose asks Grok for a SILENT clip (generate_audio=False) rather than paying to generate audio it will discard; a value > 0 keeps generate_audio True, except under audio_strategy='scored', where every Grok clip is silent. To keep Grok's native audio (ambience, action sounds) under a music score, set a value > 0 on the video segments and leave audio_strategy unset (a music-only plan is then inferred 'full_mix'), or set audio_strategy='full_mix' (which, unlike the inferred case, does not silence video segments left unset). When unset: 0.3, except that enrichment writes 0.8 under 'native', writes 0.0 to the video segments of a plan it infers 'full_mix' for music plus native audio, and uses the style preset's value on segments it authors from a brief.",
                           "maximum": 1.0,
                           "minimum": 0.0,
                           "title": "Source Audio Volume",
