@@ -81,8 +81,8 @@ The self-contained [preview request](../examples/original-story-preview.json)
 is an ordinary `compose_video` call: twelve static still holds, each 2.5 seconds,
 with cut transitions and no audio. It labels the output as a storyboard preview
 and explicitly requests a draft with `qa=false` and `qa_policy="advisory"` from
-the outset (contract 1.1 ignores `qa_policy`; a contract 1.0 server rejects
-`qa=false` without it). Review its stills and timing manually; technical checks
+the outset (contracts 1.1 and later ignore `qa_policy`; a contract 1.0 server
+rejects `qa=false` without it). Review its stills and timing manually; technical checks
 still run, but this draft is not semantically approved motion.
 Replace its twelve numbered UUID placeholders with your reviewed image resource
 IDs before submitting. The placeholders are syntactically valid UUIDs but do
@@ -127,7 +127,11 @@ If using Compose to generate a complete authored timeline instead, set
 candidate per generated shot. Frontier or a larger explicit candidate count
 costs more. This setting does not disable provider recovery or establish a total
 spending ceiling. For this assisted workflow, individual calls make it easier
-to review each action before continuing.
+to review each action before continuing. If that timeline has music and no
+`audio_strategy`, a `video` shot with `source_audio_volume` above 0 keeps
+Grok's native effects under the score (Compose infers `full_mix`, contract
+1.2), and video shots without a volume are silent; set `audio_strategy` to
+choose explicitly. See [compose_video audio](./tools.md#compose_video).
 
 Watch each result and its proposed cut. Reuse an acceptable take, trim to the
 action that actually happened, or diagnose one specific defect before choosing
@@ -164,7 +168,10 @@ most 30 seconds. Positive subsecond inserts are supported for existing footage.
 Keep the selected durations aligned to the delivery frame rate and review the
 total runtime when changing a cut. The example uses `audio_strategy="scored"`,
 retains the supplied music and deliberately mutes native clip audio. If you retain
-native sound or add narration, review overlap, placement and timing again.
+native sound or add narration, review overlap, placement and timing again. An
+existing clip's audio plays at its `source_audio_volume` whatever the strategy;
+Compose then normalizes the whole mix to −16 LUFS (−1 dBTP ceiling), so the
+volumes set the balance, not the delivered level.
 
 Keep timed overlays within their selected shots. Narration that fit the original
 cut may no longer fit or describe the revised one. Runtime checks do not replace
