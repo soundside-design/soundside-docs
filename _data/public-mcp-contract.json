@@ -114,7 +114,7 @@
       "source": "explicit_cast_only"
     }
   },
-  "contract_version": "1.1",
+  "contract_version": "1.2",
   "counts": {
     "authenticated_credit_only_tools": 3,
     "free_tools": 1,
@@ -137,7 +137,7 @@
       "tool": "create_audio"
     }
   ],
-  "lane_projection_sha256": "baf90425d5ce4fbdc24660765f81856242a775e27fc5b4b4f4478c2fed10b96a",
+  "lane_projection_sha256": "85f35c7dd9fcb95b5a1e063b2a57015d68fc6d60c6aa618fbe0625c6142f4d97",
   "pricing_policy": {
     "compose_child_calls_itemized": true,
     "compose_orchestration_success_credits": 5,
@@ -845,7 +845,7 @@
       "train_adapter"
     ]
   },
-  "tool_schema_sha256": "8753b0865646a0002b0a35e98bf194abc46da71c202c8c3b469c92d5fe69990a",
+  "tool_schema_sha256": "9bb4d4c81074fd758e1cadbf457df24618ad0056bc179d564b6aa1c3fcaa3c3f",
   "tools": [
     {
       "annotations": {
@@ -2374,7 +2374,7 @@
                 "anyOf": [
                   {
                     "additionalProperties": false,
-                    "description": "Audio tracks configuration.",
+                    "description": "Audio tracks configuration.\n\nThe final mix gets one gain toward -16 LUFS integrated loudness, limited so\nthat its true peak stays at or below -1 dBTP before AAC encoding and to at\nmost +12 dB; a silent mix is left untouched. `music.volume_db`,\n`narration.volume_db` and each segment's `source_audio_volume` set the\nbalance between the layers, not the delivered level.",
                     "properties": {
                       "ducking": {
                         "anyOf": [
@@ -2450,7 +2450,7 @@
                         "anyOf": [
                           {
                             "additionalProperties": false,
-                            "description": "Background music configuration.",
+                            "description": "Background music configuration.\n\n`volume_db` sets the music level relative to the other layers; the final\nmix is then normalized as a whole (see AudioSpec: -16 LUFS, -1 dBTP).",
                             "properties": {
                               "fade_out_sec": {
                                 "default": 2.0,
@@ -2767,7 +2767,7 @@
               "audio_strategy": {
                 "anyOf": [
                   {
-                    "description": "Controls how audio layers are composed in the final mix.\n\nNATIVE:    Provider-generated audio (e.g., Grok soundtrack) is primary.\nNARRATED:  External narration is primary, native audio is ambient bed.\nSCORED:    External music is primary, no native audio.\nFULL_MIX:  All layers: narration + music + native audio with ducking.\n\nThe strategy reaches the video request through `source_audio_volume`:\n`enrichment._apply_audio_strategy_defaults` writes 0.8/0.3/0.0/0.2 per\nstrategy onto each segment, and `GrokVisualAdapter` asks Grok for a silent\nclip (`generate_audio=False`) exactly when that volume is 0 — i.e. under\nSCORED, whose native track finishing would discard anyway.",
+                    "description": "Controls how audio layers are composed in the final mix.\n\nNATIVE:    Provider-generated audio (e.g., Grok soundtrack) is primary.\nNARRATED:  External narration is primary, native audio is ambient bed.\nSCORED:    External music is primary, no native audio.\nFULL_MIX:  All layers: narration + music + native audio with ducking.\n\nThe strategy reaches the video request through each segment's\n`source_audio_volume`. Enrichment writes a default in two cases only: 0.8\nto every segment left unset under NATIVE, and 0 to every unset `video`\nsegment when it infers FULL_MIX for music plus native audio (see\n`CompositionPlan.audio_strategy`). Every built-in style preset carries its\nown `source_audio_volume`, so no other strategy default applies: an unset\nsegment keeps 0.3, or the preset's value on a segment enrichment authored.\nGrok is asked for a silent clip (`generate_audio=False`) when a segment's\nvolume is 0, and for every segment under SCORED.",
                     "enum": [
                       "native",
                       "narrated",
@@ -2782,7 +2782,7 @@
                   }
                 ],
                 "default": null,
-                "description": "Audio mixing strategy. Auto-inferred from plan contents if not set: NATIVE when no narration/music, NARRATED when narration present, SCORED for music-only, FULL_MIX for narration+music."
+                "description": "Audio mixing strategy. When unset it is inferred from the plan's audio after enrichment (music that enrichment adds because the brief asks for it counts): 'native' with no narration or music, 'narrated' with narration only, 'full_mix' with narration and music, and 'scored' with music only. Since contract 1.2, a music-only plan in which at least one `video` segment explicitly sets source_audio_volume > 0 is inferred 'full_mix' instead: those segments keep Grok's native audio under the score, and every `video` segment that leaves source_audio_volume unset is set to 0.0 (a silent clip). `existing` segments never trigger this. Under 'narrated' and 'full_mix', suppress_video_speech (default true) asks Grok for ambience and action sounds without dialogue or music. An explicit strategy is never overridden; an explicit 'scored' makes every Grok clip silent, whatever its source_audio_volume."
               },
               "auto_generate_references": {
                 "default": true,
@@ -3641,7 +3641,7 @@
                         },
                         "source_audio_volume": {
                           "default": 0.3,
-                          "description": "Volume for retained source audio (0.0=stripped, 0.3=ambient bed, 1.0=full). Also drives Grok's `generate_audio` on this segment: 0.0 means finishing throws the native track away, so compose asks Grok for a SILENT clip (generate_audio=False) rather than paying to generate audio it will discard; any value > 0 keeps generate_audio True. Enrichment sets this from the audio strategy (native 0.8 / narrated 0.3 / scored 0.0 / full_mix 0.2), so audio_strategy='scored' is what turns native audio off end-to-end.",
+                          "description": "Volume for retained source audio (0.0=stripped, 0.3=ambient bed, 1.0=full). Also drives Grok's `generate_audio` on this segment: 0.0 means finishing throws the native track away, so compose asks Grok for a SILENT clip (generate_audio=False) rather than paying to generate audio it will discard; a value > 0 keeps generate_audio True, except under audio_strategy='scored', where every Grok clip is silent. To keep Grok's native audio (ambience, action sounds) under a music score, set a value > 0 on the video segments and leave audio_strategy unset (a music-only plan is then inferred 'full_mix'), or set audio_strategy='full_mix'. When unset: 0.3, except that enrichment writes 0.8 under 'native', writes 0.0 to the video segments of a plan it infers 'full_mix' for music plus native audio, and uses the style preset's value on segments it authors from a brief.",
                           "maximum": 1.0,
                           "minimum": 0.0,
                           "title": "Source Audio Volume",
