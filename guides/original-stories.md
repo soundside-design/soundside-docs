@@ -80,10 +80,9 @@ pressed button does not prove that generated motion will show correct contact.
 The self-contained [preview request](../examples/original-story-preview.json)
 is an ordinary `compose_video` call: twelve static still holds, each 2.5 seconds,
 with cut transitions and no audio. It labels the output as a storyboard preview
-and explicitly requests a draft with `qa=false`, `qa_policy="advisory"` and
-`allow_degraded_output=false` from the outset. Review its stills and timing
-manually; technical checks still run, but this draft is not semantically
-approved motion.
+and explicitly requests a draft with `qa=false` from the outset. Review its
+stills and timing manually; technical checks still run, but this draft is not
+semantically approved motion.
 Replace its twelve numbered UUID placeholders with your reviewed image resource
 IDs before submitting. The placeholders are syntactically valid UUIDs but do
 not identify usable media.
@@ -94,9 +93,10 @@ grid (multiples of 1/24 second here), and keep the total at 30 seconds. Review t
 playable preview before motion generation. This pause is your workflow decision,
 not a server-side hold/resume feature. Preview assembly is billable. Check the
 actual hold durations, image order and output geometry as well as the story.
-Use `qa=true`, `qa_policy="gate"` and `allow_degraded_output=false` for the final
-motion edit, as the selected-edit example does; draft review does not replace
-that gate or direct inspection of the film.
+Use `qa=true` for the final motion edit, as the selected-edit example does. Its
+review is evidence: the certificate reads `certified` or `needs_review` and lists
+each judge finding, and only objective checks fail delivery. Draft review does
+not replace that review or direct inspection of the film.
 
 ## 3. Generate one take, then inspect what happened
 

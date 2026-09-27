@@ -92,8 +92,15 @@
       "narration_transcription_attempts": 1
     },
     "quality_delivery": {
-      "final_verified_degraded_only": true,
-      "intermediate_stages": "fail_closed"
+      "certificate_statuses": [
+        "certified",
+        "needs_review",
+        "draft",
+        "failed"
+      ],
+      "judge_triggered_regeneration": false,
+      "judges": "evidence",
+      "publication_gate": "objective_checks"
     },
     "reassembly": {
       "explicit_shape": "all_segment_indices_exactly",
@@ -107,7 +114,7 @@
       "source": "explicit_cast_only"
     }
   },
-  "contract_version": "1.0",
+  "contract_version": "1.1",
   "counts": {
     "authenticated_credit_only_tools": 3,
     "free_tools": 1,
@@ -130,7 +137,7 @@
       "tool": "create_audio"
     }
   ],
-  "lane_projection_sha256": "68eae27a2de6f6cc6850fc6ddc9d45d7a1b6664d3392060230349c980dc3c75c",
+  "lane_projection_sha256": "baf90425d5ce4fbdc24660765f81856242a775e27fc5b4b4f4478c2fed10b96a",
   "pricing_policy": {
     "compose_child_calls_itemized": true,
     "compose_orchestration_success_credits": 5,
@@ -838,7 +845,7 @@
       "train_adapter"
     ]
   },
-  "tool_schema_sha256": "934312ad43616a56eaf1b6f8f1072a8ccb7199e90b7e8f8d79284525265a0ef7",
+  "tool_schema_sha256": "8753b0865646a0002b0a35e98bf194abc46da71c202c8c3b469c92d5fe69990a",
   "tools": [
     {
       "annotations": {
@@ -2211,7 +2218,7 @@
         "title": "Compose Video"
       },
       "category": "composition",
-      "description": "Compose a complete video from a timeline plan.\n\nAccepts a plan (sparse brief or detailed timeline), enriches it, generates assets in parallel, and assembles with transitions, audio mix, and overlays. Auto-creates a project/collection if none provided.\n\nPlans: minimal (just brief+style), moderate (segment outlines), or detailed (providers, prompts, timing). Server fills gaps.\n\nAsync: returns pending resource_id. Poll with lib_list or await MCP notification.\n\nRevision: pass reuse_segments mapping indices to prior resource_ids (from metadata.composition.segment_resources). Only changed segments regenerate.\n\nRevise (sugar): pass revise_from=<parent composition UUID> with plan={} and regenerate=[indices]. The server rebuilds the plan and reuse map from the parent's durable checkpoint (owner-only): every segment NOT listed in regenerate reuses the parent's clip, and the parent's monolithic narration/music carry over as supplied audio. regenerate=[] (or omitted) re-assembles the parent as-is — every segment reuses, carried audio, full QA + publication; this is the recovery path for a FAILED own parent whose segments all completed. Optional segment_overrides edits regenerated segments (prompt, duration_sec, motion_intensity, camera_position) and requires a non-empty regenerate. The manual reuse_segments path above remains the low-level alternative.\n\nReassemble-only: set reassemble_only=true with ALL segment IDs in reuse_segments and the prior enriched timeline as plan. Skips planning/generation and runs the same assembly+QA publication gate.\n",
+      "description": "Compose a complete video from a timeline plan.\n\nAccepts a plan (sparse brief or detailed timeline), enriches it, generates assets in parallel, and assembles with transitions, audio mix, and overlays. Auto-creates a project/collection if none provided.\n\nPlans: minimal (just brief+style), moderate (segment outlines), or detailed (providers, prompts, timing). Server fills gaps.\n\nAsync: returns pending resource_id. Poll with lib_list or await MCP notification.\n\nRevision: pass reuse_segments mapping indices to prior resource_ids (from metadata.composition.segment_resources). Only changed segments regenerate.\n\nRevise (sugar): pass revise_from=<parent composition UUID> with plan={} and regenerate=[indices]. The server rebuilds the plan and reuse map from the parent's durable checkpoint (owner-only): every segment NOT listed in regenerate reuses the parent's clip, and the parent's monolithic narration/music carry over as supplied audio. regenerate=[] (or omitted) re-assembles the parent as-is — every segment reuses, carried audio, full QA + publication; this is the recovery path for a FAILED own parent whose segments all completed. Optional segment_overrides edits regenerated segments (prompt, duration_sec, motion_intensity, camera_position) and requires a non-empty regenerate. The manual reuse_segments path above remains the low-level alternative.\n\nReassemble-only: set reassemble_only=true with ALL segment IDs in reuse_segments and the prior enriched timeline as plan. Skips planning/generation and runs the same assembly, QA review and objective delivery checks.\n\nQuality: judges are evidence. No judge verdict fails or regenerates a run; the publication gate is objective checks only (generated media, duration, resolution, audio, narration mix). metadata.delivery_certificate.status is certified, needs_review, draft (qa=false) or failed, and its needs_review list names every judge finding.\n",
       "execution": "pending",
       "inputSchema": {
         "$defs": {
@@ -2288,7 +2295,7 @@
         "properties": {
           "allow_degraded_output": {
             "default": false,
-            "description": "Allow only a complete, non-vetoed final semantic panel that misses its score threshold to publish as verified_degraded. Intermediate, mechanical, missing-panel, and veto failures remain fail-closed.",
+            "description": "Deprecated since contract 1.1: accepted and ignored.",
             "title": "Allow Degraded Output",
             "type": "boolean"
           },
@@ -2334,7 +2341,7 @@
           "evaluation_mode": {
             "const": "full",
             "default": "full",
-            "description": "Required value 'full': run the complete supported evaluation and delivery gate.",
+            "description": "Required value 'full': run the complete supported evaluation, QA review and objective delivery checks.",
             "title": "Evaluation Mode",
             "type": "string"
           },
@@ -2936,7 +2943,7 @@
                   }
                 ],
                 "default": null,
-                "description": "Optional caller hint for content type, e.g. 'cinematic short', 'narrative film', 'ad', 'explainer'. When set it authoritatively routes the editorial story gate; otherwise content type is inferred from the brief.",
+                "description": "Optional caller hint for content type, e.g. 'cinematic short', 'narrative film', 'ad', 'explainer'. When set it authoritatively routes the editorial story review (evidence only); otherwise content type is inferred from the brief.",
                 "title": "Delivery Intent"
               },
               "domain_rubric": {
@@ -3987,13 +3994,13 @@
           },
           "qa": {
             "default": true,
-            "description": "Run vision_qa on final output (~3 credits).",
+            "description": "Run the final review panel on the assembled film (~3 credits). Its verdict is evidence (certified or needs_review) and never blocks delivery; qa=false delivers a draft.",
             "title": "Qa",
             "type": "boolean"
           },
           "qa_policy": {
             "default": "gate",
-            "description": "'gate' (default): fail if required QA is not verified and passing. 'advisory': publish nonpassing evidence only when allow_degraded_output=true.",
+            "description": "Deprecated since contract 1.1: accepted and ignored. Judges are evidence; delivery gates only on objective checks.",
             "enum": [
               "gate",
               "advisory"
@@ -4013,7 +4020,7 @@
           },
           "reassemble_only": {
             "default": false,
-            "description": "Skip GES, run assembly+QA only. Requires ALL segment IDs in reuse_segments.",
+            "description": "Skip GES; run assembly, QA review and objective delivery checks only. Requires ALL segment IDs in reuse_segments.",
             "title": "Reassemble Only",
             "type": "boolean"
           },
