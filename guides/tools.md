@@ -878,7 +878,7 @@ Fixed generated-audio fanout is profile-owned, not caller-selectable: stable cre
 | `project_id` | no | string | Library project UUID. If omitted, a project is auto-created. |
 | `collection_id` | no | string | Library collection UUID. |
 | `quality_profile` | no | string | `stable` (default) or explicit `frontier`; both are Grok-only for visual generation. |
-| `qa`, `qa_policy`, `allow_degraded_output` | no | varies | Intermediate and mechanical checks always fail closed. Advisory degradation can publish only a complete, non-vetoed final semantic panel that misses its score, labeled `verified_degraded`. |
+| `qa`, `qa_policy`, `allow_degraded_output` | no | varies | Judges are evidence: no judge verdict fails or regenerates a run, and only objective checks fail delivery. `qa=true` (default) runs the final review panel; the certificate reads `certified`, `needs_review` (its `needs_review` list names each judge finding), `draft` for `qa=false`, or `failed`. `qa_policy` and `allow_degraded_output` are deprecated since contract 1.1: accepted and ignored. |
 | `reassemble_only` | no | boolean | Rebuild from a complete reuse map or an owned parent checkpoint without regenerating segments. |
 
 **Pricing and access:** Compose requires OAuth or API-key credits and is absent from x402 discovery/quotes. A successful root adds a five-credit orchestration fee; child generation, evaluation, and editing calls are separately itemized. Failed roots do not pay the orchestration fee.
