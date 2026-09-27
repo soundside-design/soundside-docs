@@ -80,9 +80,10 @@ pressed button does not prove that generated motion will show correct contact.
 The self-contained [preview request](../examples/original-story-preview.json)
 is an ordinary `compose_video` call: twelve static still holds, each 2.5 seconds,
 with cut transitions and no audio. It labels the output as a storyboard preview
-and explicitly requests a draft with `qa=false` from the outset. Review its
-stills and timing manually; technical checks still run, but this draft is not
-semantically approved motion.
+and explicitly requests a draft with `qa=false` and `qa_policy="advisory"` from
+the outset (contract 1.1 ignores `qa_policy`; a contract 1.0 server rejects
+`qa=false` without it). Review its stills and timing manually; technical checks
+still run, but this draft is not semantically approved motion.
 Replace its twelve numbered UUID placeholders with your reviewed image resource
 IDs before submitting. The placeholders are syntactically valid UUIDs but do
 not identify usable media.
