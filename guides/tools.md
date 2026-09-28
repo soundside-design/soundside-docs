@@ -772,7 +772,7 @@ See the [X account operations guide](./x-publishing.md) for setup, agent grants,
 {"name":"publish_content","arguments":{"action":"reply","destination":"x","idempotency_key":"xop-reply-a1","post_id":"1888000000000000001","text":"Thanks for the feedback.","made_with_ai":false}}
 ```
 
-Read responses are completed standard responses with top-level `data`, `meta`, optional `includes`, bounded `errors`, Soundside-derived `total_count`, and `next_pagination_token` where available; there is no `items` field. Lists can return an empty page or partial data plus errors. A successful write admission returns a pending receipt resource. Listen for resource updates or recover it with free `lib_list`. Never use a new key to bypass an unknown final write outcome.
+Read responses are completed standard responses with top-level `data`, `meta`, optional `includes`, bounded `errors`, Soundside-derived `total_count`, and `next_pagination_token` where available; there is no `items` field. Lists can return an empty page or partial data plus errors. A successful write admission returns a pending receipt resource. Check its status with free `lib_list`; a push may also arrive, but don't rely on it. Never use a new key to bypass an unknown final write outcome.
 
 ## lib_list
 
@@ -889,7 +889,7 @@ The final mix is then normalized to −16 LUFS integrated with a −1 dBTP true-
 
 **Pricing and access:** Compose requires OAuth or API-key credits and is absent from x402 discovery/quotes. A successful root adds a five-credit orchestration fee; child generation, evaluation, and editing calls are separately itemized. Failed roots do not pay the orchestration fee.
 
-The initial response is `pending` with a parent `resource_id`. Completion/failure is pushed through `notifications/resources/updated`; after reconnecting, recover the parent and children with `lib_list`. Duration and cost estimates are planning estimates, not an SLA.
+The initial response is `pending` with a parent `resource_id`. Check completion or failure with `lib_list` (the parent's `status`; the same tool reads its children), including after reconnecting; a `notifications/resources/updated` push may also arrive, but don't rely on it. Duration and cost estimates are planning estimates, not an SLA.
 
 **Example — brief + narration:**
 ```json
@@ -992,7 +992,7 @@ run = client.call_tool("remix_video", {
 
 Save the exact creative settings and token privately. Retrying the same valid token returns the same parent, even if it already completed or failed. `QUOTE_BUSY` is retryable with that token. Expiry or changed creative inputs require a new quote for a new run; use `lib_list` to recover an existing job. A new quote/purchase is a new authorization to spend.
 
-The initial purchase response is `pending` with a parent `resource_id`. Resource changes are pushed through `notifications/resources/updated`; recover on demand with `lib_list(entity_type="resources", resource_ids=[...])`. The run files its film, source-left/result-right synchronized comparison and JSON report under `6 Deliverables`. Outputs stay private until the owner chooses to share them.
+The initial purchase response is `pending` with a parent `resource_id`. Check completion with `lib_list(entity_type="resources", resource_ids=[...])` (the parent's `status`); a `notifications/resources/updated` push may also arrive, but don't rely on it. The run files its film, source-left/result-right synchronized comparison and JSON report under `6 Deliverables`. Outputs stay private until the owner chooses to share them.
 
 Inspect `delivery_review`, `needs_review` and `unresolved_defects` before using the film. Final comparison review covers the delivery in windows of at most 10 seconds at 4 fps, in addition to shot checks; automated checks can miss defects. Completed status means the job delivered, not that every quality criterion passed. The report separates `processing_credits`, `service_fee_credits` and accounted `credits_settled`; account usage records are authoritative.
 
