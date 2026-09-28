@@ -531,7 +531,7 @@ Extract content from media: single frame, multiple frames, or audio track.
 
 Analyze media for technical properties, reusable transcript artifacts, rough-cut segment selection, EDL export, or AI-powered evaluation.
 
-**Providers (vision_qa):** `anthropic` (Claude), `grok`, `openai` (GPT-4o), `qwen` (omnimodal), `vertex` (Gemini — default). Technical + ffprobe routes via `soundside.ai`.
+**Providers (vision_qa):** `anthropic` (Claude), `grok`, `openai` (GPT-5.6), `qwen` (omnimodal), `vertex` (Gemini — default). Technical + ffprobe routes via `soundside.ai`.
 
 **Analysis types:**
 - `technical` (default) — Duration, resolution, codecs, bitrate via ffprobe
