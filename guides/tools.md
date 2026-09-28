@@ -791,6 +791,8 @@ List and search library entities.
 | `sort_by` | no | string | `created_at`, `name`, `size_bytes` |
 | `limit` / `offset` | no | integer | Pagination |
 
+`lineage` (with `resource_id`) returns the parents and children of a resource you own or can see through a project share. Relatives you can't access are left out. Public visibility doesn't expose lineage, and an unknown, deleted or inaccessible `resource_id` returns a not-found error.
+
 **Example — Check async resource status:**
 ```json
 {
