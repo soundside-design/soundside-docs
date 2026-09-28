@@ -69,7 +69,7 @@ Returns a `resource_id`. The signed GCS asset URL arrives on the **item fetched 
 }}
 ```
 
-Returns a pending `resource_id` immediately. The video generates in the background — check completion with `lib_list` (the resource's `status`). An MCP `notifications/resources/updated` push may also arrive while your client holds a stream, but don't rely on it:
+Returns a pending `resource_id` immediately. The video generates in the background — check its `status` with `lib_list` until it is `completed`, `failed` or `cancelled`. An MCP `notifications/resources/updated` push may also arrive while your client holds a stream, but don't rely on it:
 
 ```json
 {"jsonrpc":"2.0","id":"5","method":"tools/call","params":{
@@ -137,11 +137,11 @@ Follow each live schema. `create_image`, `create_video`, `create_audio`, and `cr
 | **Sync** — final result in response | `create_image` (creative_freedom, grok, minimax, vertex), `create_text`, `create_audio` (grok, vertex), `create_music` (lyria), `create_artifact`, editing tools, all `analyze_media` modes, `list_adapters`, and library tools |
 | **Pending** — returns a resource that completes later | `create_video` (all providers), `create_image` (alibaba), `create_music` (creative_freedom), `compose_video`, `create_audio` (minimax/runway and provider-dependent Creative Freedom modes), `train_adapter`, and `manage_adapter` deploy/undeploy operations |
 
-For async tools, check completion with `lib_list` (the resource's `status`). An MCP `notifications/resources/updated` push may also arrive while your client holds a stream, but don't rely on it. Public task/hold/resume guarantees are not part of the current contract.
+For async tools, check the resource's `status` with `lib_list` until it is `completed`, `failed` or `cancelled`. An MCP `notifications/resources/updated` push may also arrive while your client holds a stream, but don't rely on it. Public task/hold/resume guarantees are not part of the current contract.
 
 ## 7. Async recovery
 
-Keep the returned `resource_id`. Completion and failure are visible through `lib_list(entity_type="resources", resource_ids=[...])` in the same session and after a reconnect or session loss; a push is best-effort.
+Keep the returned `resource_id`. Read its `status` with `lib_list(entity_type="resources", resource_ids=[...])`, in the same session or after a reconnect or session loss; it is final once `completed`, `failed` or `cancelled`. A push is best-effort.
 
 ## 8. Tool Result Format
 
