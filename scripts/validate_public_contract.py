@@ -130,7 +130,7 @@ def main() -> int:
         "provider_mode_matrix": contract["provider_mode_matrix"],
     }
     require(projection_hash(lane_projection) == contract["lane_projection_sha256"], "lane projection is not reproducible")
-    require(contract["contract_version"] == "1.2", "unexpected contract version")
+    require(contract["contract_version"] == "1.3", "unexpected contract version")
     require(contract["public_tier"] == "pro", "production contract must be pro")
     require(len(contract["sets"]["pro_tools"]) == 21, "expected 21 pro tools")
     require(contract["sets"]["free_tools"] == ["lib_list"], "lib_list must be sole free tool")
