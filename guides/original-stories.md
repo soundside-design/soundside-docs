@@ -186,7 +186,8 @@ submitting. This script uses the public MCP SDK, with no Soundside backend impor
 Install `mcp` and `httpx`, set `SOUNDSIDE_API_KEY` and `SOUNDSIDE_MCP_URL` (normally
 `https://mcp.soundside.ai/mcp`), then run it with the JSON file path. It submits
 once, then checks the parent's status with free `lib_list` every minute until it
-is `completed` or `failed`; Ctrl-C stops the local check, not the job.
+is `completed` or `failed`. On `failed` it prints the failure reason and exits
+with status 1. Ctrl-C stops the local check, not the job.
 
 ```python
 import asyncio
@@ -207,9 +208,15 @@ async def on_message(message):
         print("Resource changed:", message.root.params.uri, flush=True)
 
 def payload_of(result):
-    return result.structuredContent or json.loads(
-        next(item.text for item in result.content if item.type == "text")
-    )
+    text = next((item.text for item in result.content if item.type == "text"), "")
+    if result.isError:
+        raise RuntimeError(f"Tool call failed: {text}")
+    if result.structuredContent:
+        return result.structuredContent
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"Tool returned non-JSON text: {text!r}") from exc
 
 async def main():
     request = json.loads(Path(sys.argv[1]).read_text())
@@ -221,21 +228,25 @@ async def main():
                 result = await session.call_tool(request["name"], request["arguments"])
                 print(result.model_dump_json(indent=2), flush=True)
                 payload = payload_of(result)
-                if result.isError or payload.get("success") is False or not payload.get("resource_id"):
+                if payload.get("success") is False or not payload.get("resource_id"):
                     raise RuntimeError("Tool call failed; inspect the response above.")
                 parent_id = payload["resource_id"]  # Save it: lib_list reads it in any later session.
-                status = payload.get("status")
-                while status not in ("completed", "failed"):
+                parent = payload
+                while parent.get("status") not in ("completed", "failed"):
                     await asyncio.sleep(60)
                     listing = payload_of(await session.call_tool(
                         "lib_list", {"entity_type": "resources", "resource_ids": [parent_id]}
                     ))
                     if listing.get("success") is False or not listing.get("items"):
                         raise RuntimeError(f"lib_list failed: {listing.get('error')}")
-                    status = listing["items"][0]["status"]
-                    print("Parent status:", status, flush=True)
+                    parent = listing["items"][0]
+                    print("Parent status:", parent["status"], flush=True)
+                return parent
 
-asyncio.run(main())
+parent = asyncio.run(main())
+if parent["status"] == "failed":
+    print("Failure reason:", parent.get("failure_reason"), flush=True)
+    sys.exit(1)
 ```
 
 Completion is the parent's `status` in `lib_list`. A resource notification, when
