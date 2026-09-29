@@ -263,7 +263,7 @@ Keep the JSON private and preserve it for retries. Do not edit its creative argu
 
 ## Completion, comparison and quality
 
-The purchase returns a pending parent resource. MCP clients receive `notifications/resources/updated` when it changes state; no client polling is required. After reconnecting, make an on-demand read:
+The purchase returns a pending parent resource. A `notifications/resources/updated` push may arrive while your client holds a stream, but don't rely on it: completion is visible through an on-demand read of the parent's `status`. A run takes many minutes, so check at a relaxed interval, and again after reconnecting:
 
 ```json
 {"name":"lib_list","arguments":{"entity_type":"resources","resource_ids":["<parent-resource-uuid>"]}}

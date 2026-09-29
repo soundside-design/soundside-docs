@@ -185,7 +185,9 @@ Download either JSON request above, replace its resource IDs, and review it befo
 submitting. This script uses the public MCP SDK, with no Soundside backend imports.
 Install `mcp` and `httpx`, set `SOUNDSIDE_API_KEY` and `SOUNDSIDE_MCP_URL` (normally
 `https://mcp.soundside.ai/mcp`), then run it with the JSON file path. It submits
-once and keeps listening for updates; Ctrl-C stops the local listener.
+once, then checks the parent's status with free `lib_list` every minute until it
+is `completed` or `failed`. On `failed` it prints the failure reason and exits
+with status 1. Ctrl-C stops the local check, not the job.
 
 ```python
 import asyncio
@@ -199,10 +201,22 @@ from mcp import ClientSession, types
 from mcp.client.streamable_http import streamable_http_client
 
 async def on_message(message):
+    # Best-effort: a push may arrive while the client holds a stream. Never wait for one.
     if isinstance(message, types.ServerNotification) and isinstance(
         message.root, types.ResourceUpdatedNotification
     ):
         print("Resource changed:", message.root.params.uri, flush=True)
+
+def payload_of(result):
+    text = next((item.text for item in result.content if item.type == "text"), "")
+    if result.isError:
+        raise RuntimeError(f"Tool call failed: {text}")
+    if result.structuredContent:
+        return result.structuredContent
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"Tool returned non-JSON text: {text!r}") from exc
 
 async def main():
     request = json.loads(Path(sys.argv[1]).read_text())
@@ -213,19 +227,31 @@ async def main():
                 await session.initialize()
                 result = await session.call_tool(request["name"], request["arguments"])
                 print(result.model_dump_json(indent=2), flush=True)
-                payload = result.structuredContent or json.loads(
-                    next(item.text for item in result.content if item.type == "text")
-                )
-                if result.isError or payload.get("success") is False or not payload.get("resource_id"):
+                payload = payload_of(result)
+                if payload.get("success") is False or not payload.get("resource_id"):
                     raise RuntimeError("Tool call failed; inspect the response above.")
-                # Save the returned parent resource_id. An update is not a terminal status.
-                await asyncio.Event().wait()
+                parent_id = payload["resource_id"]  # Save it: lib_list reads it in any later session.
+                parent = payload
+                while parent.get("status") not in ("completed", "failed"):
+                    await asyncio.sleep(60)
+                    listing = payload_of(await session.call_tool(
+                        "lib_list", {"entity_type": "resources", "resource_ids": [parent_id]}
+                    ))
+                    if listing.get("success") is False or not listing.get("items"):
+                        raise RuntimeError(f"lib_list failed: {listing.get('error')}")
+                    parent = listing["items"][0]
+                    print("Parent status:", parent["status"], flush=True)
+                return parent
 
-asyncio.run(main())
+parent = asyncio.run(main())
+if parent["status"] == "failed":
+    print("Failure reason:", parent.get("failure_reason"), flush=True)
+    sys.exit(1)
 ```
 
-Resource notifications identify what changed; they do not themselves prove
-completion. Read the saved parent on demand, including after reconnecting:
+Completion is the parent's `status` in `lib_list`. A resource notification, when
+one arrives, only says that something changed. Read the saved parent on demand,
+including after reconnecting:
 
 ```json
 {

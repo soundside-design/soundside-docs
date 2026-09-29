@@ -1,6 +1,6 @@
 {
-  "artifact_sha256": "8f1568c1defa91236fbfcba0dd456c3e0f37e8ef3ce3173d015cfc3bc0fdf053",
-  "contract_version": "1.2",
-  "lane_projection_sha256": "85f35c7dd9fcb95b5a1e063b2a57015d68fc6d60c6aa618fbe0625c6142f4d97",
+  "artifact_sha256": "332b8a199b908f6412c8f76d33472a525f6b9651f571ecd452a10f65fae5b194",
+  "contract_version": "1.3",
+  "lane_projection_sha256": "c924d50c08ebf77351118cf037a6d36b3721c5d83e0ab97d2136496291b3c699",
   "tool_schema_sha256": "060348a7ec936bddf2d3bddaebe912385085fcaeec227affd5f1a8b3c6afcd84"
 }

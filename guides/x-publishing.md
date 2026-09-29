@@ -141,7 +141,7 @@ A newly admitted write returns a pending receipt such as:
 {"success":true,"status":"pending","resource_id":"55555555-5555-4555-8555-555555555555","metadata":{"provider":"x","account":{"username":"soundside"}}}
 ```
 
-Listen for `notifications/resources/updated`. To recover after a reconnect or a new process, make one free library lookup:
+Check the receipt's `status` with a free library lookup, in the same session or after a reconnect or a new process. A `notifications/resources/updated` push may also arrive, but don't rely on it:
 
 ```json
 {"name":"lib_list","arguments":{"entity_type":"resources","resource_ids":["55555555-5555-4555-8555-555555555555"]}}
