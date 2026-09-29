@@ -163,7 +163,7 @@ Tool results use MCP's `structuredContent` (preferred) plus a text content block
 }
 ```
 
-- The canonical lifecycle field is **`status`** (`pending` / `completed` / `failed`). Older responses used `state`; both are still returned on some code paths.
+- The canonical lifecycle field is **`status`** (`pending` / `completed` / `failed` / `cancelled`). Older responses used `state`; both are still returned on some code paths.
 - For completed resources that carry an asset, the signed URL lives on `structuredContent.url` — or on the `lib_list` item if the tool didn't include it inline.
 - The `resource_link` block enables MCP clients to render download buttons, previews, or inline embeds.
 
