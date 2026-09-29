@@ -145,7 +145,7 @@ Keep the returned `resource_id`. Read its `status` with `lib_list(entity_type="r
 
 ## 8. Tool Result Format
 
-Tool results use MCP's `structuredContent` (preferred) plus a text content block. Async tools that declare MCP `taskSupport` additionally emit a `resource_link` block so task-aware clients can render a download/preview inline.
+Tool results use MCP's `structuredContent` (preferred) plus a text content block. Pending results from `create_video` and `create_audio` also carry a `resource_link` block that points at the library resource. Soundside does not use MCP tasks: for any pending result, check the resource's `status` with `lib_list` until it is `completed`, `failed` or `cancelled`.
 
 ```json
 {
@@ -163,7 +163,7 @@ Tool results use MCP's `structuredContent` (preferred) plus a text content block
 }
 ```
 
-- The canonical lifecycle field is **`status`** (`pending` / `completed` / `failed`). Older responses used `state`; both are still returned on some code paths.
+- The canonical lifecycle field is **`status`** (`pending` / `completed` / `failed` / `cancelled`). Older responses used `state`; both are still returned on some code paths.
 - For completed resources that carry an asset, the signed URL lives on `structuredContent.url` — or on the `lib_list` item if the tool didn't include it inline.
 - The `resource_link` block enables MCP clients to render download buttons, previews, or inline embeds.
 
