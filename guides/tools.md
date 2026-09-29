@@ -912,6 +912,7 @@ The initial response is `pending` with a parent `resource_id`. Check completion 
     "plan": {
       "title": "Pollination",
       "brief": "A warm natural-history explainer",
+      "output": {"duration_sec": 11},
       "segments": [
         {"type": "video", "provider": "grok", "prompt": "Macro shot of a bee landing on a sunflower", "duration_sec": 6},
         {"type": "video", "provider": "grok", "prompt": "Pollen clings to the bee as it visits another flower", "duration_sec": 6}
@@ -921,6 +922,8 @@ The initial response is `pending` with a parent `resource_id`. Check completion 
   }
 }
 ```
+
+**Timeline length.** A crossfade overlaps the two clips it joins, so a detailed timeline runs shorter than the sum of its segments. The example above assembles to 11.6 s: two 6 s shots minus one 400 ms crossfade. Unless the plan sets `transitions`, the style's preset applies: for example, 400 ms crossfades for the default style, 800 ms for `silent_cinematic`, and cuts for `anime_cinematic`. Delivery requires a runtime of at least 10 s, at least 60% of `output.duration_sec` and at least the narration's length. It also requires at most 1.5 × `output.duration_sec`, or the narration plus 15 s when that is longer. `output.duration_sec` defaults to 30 when omitted. When a plan sets every segment's duration and has no narration, a timeline outside that range is refused with `INVALID_PARAMS` before any charge; the error names the gap and the fixes. A timeline that Compose authors, or fits to generated narration, is checked the same way before any visual generation.
 
 All media references must be authorized Soundside resource UUIDs. Public Compose does not accept media URLs, top-level `duration_sec`, nested `advanced_options`, non-Grok segment providers, public autonomy/tasks fields, or a hold/resume promise. Reuse supports complete parent reassembly and surgical revision; it does not weaken resource ownership checks.
 
